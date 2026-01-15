@@ -70,7 +70,14 @@ public enum ErrorCode {
     VEO_INVALID_PROMPT(9004, "유효하지 않은 프롬프트입니다"),
     VEO_INVALID_PARAMETERS(9005, "유효하지 않은 비디오 생성 파라미터입니다"),
     VEO_VIDEO_NOT_READY(9006, "비디오가 아직 준비되지 않았습니다"),
-    VEO_QUOTA_EXCEEDED(9007, "Veo API 할당량을 초과했습니다");
+    VEO_QUOTA_EXCEEDED(9007, "Veo API 할당량을 초과했습니다"),
+
+    // OAuth 관련 에러 (10000번대)
+    OAUTH_TOKEN_ERROR(10000, "OAuth 토큰 획득에 실패했습니다"),
+    OAUTH_USER_INFO_ERROR(10001, "OAuth 사용자 정보 조회에 실패했습니다"),
+    OAUTH_PROVIDER_NOT_SUPPORTED(10002, "지원하지 않는 OAuth 제공자입니다"),
+    OAUTH_ALREADY_CONNECTED(10003, "이미 연결된 소셜 계정입니다"),
+    OAUTH_NOT_CONNECTED(10004, "연결된 소셜 계정이 없습니다");
 
     private final int code;
     private final String message;
