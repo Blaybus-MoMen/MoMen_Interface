@@ -27,4 +27,7 @@ public interface UserRepository {
 
     // 모든 사용자 조회
     List<User> findAll();
+
+    // OAuth 제공자와 OAuth ID로 사용자 조회
+    Optional<User> findByOauthProviderAndOauthId(OAuthProvider provider, String oauthId);
 }
