@@ -1,5 +1,6 @@
 package com.blaybus.infrastructure.jpa.user;
 
+import com.blaybus.domain.user.OAuthProvider;
 import com.blaybus.domain.user.User;
 import com.blaybus.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +43,10 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public List<User> findAll() {
         return userJpaRepository.findAll();
+    }
+
+    @Override
+    public Optional<User> findByOauthProviderAndOauthId(OAuthProvider provider, String oauthId) {
+        return userJpaRepository.findByOauthProviderAndOauthId(provider, oauthId);
     }
 }
