@@ -50,38 +50,28 @@ public class EmailVerification extends BaseTimeEntity {
         this.attemptCount = 0;
     }
 
-    /**
-     * 인증 시도 증가
-     */
+    // 인증 시도 증가
     public void incrementAttempt() {
         this.attemptCount++;
     }
 
-    /**
-     * 인증 완료 처리
-     */
+    // 인증 완료 처리
     public void verify() {
         this.verified = true;
         this.verifiedAt = LocalDateTime.now();
     }
 
-    /**
-     * 인증 코드 만료 여부 확인
-     */
+    // 인증 코드 만료 여부 확인
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(this.expiresAt);
     }
 
-    /**
-     * 인증 시도 횟수 초과 여부 (최대 5회)
-     */
+    // 인증 시도 횟수 초과 여부 (최대 5회)
     public boolean isAttemptsExceeded() {
         return this.attemptCount >= 5;
     }
 
-    /**
-     * 코드 일치 여부 확인
-     */
+    // 코드 일치 여부 확인
     public boolean isCodeMatch(String inputCode) {
         return this.code.equals(inputCode);
     }
