@@ -45,10 +45,10 @@ public class SecurityConfig {
                         // 공개 엔드포인트
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/oauth/**",  // OAuth 소셜 로그인 전체 공개
                                 "/api/v1/email-verification/**",
                                 "/api/v1/openai/**",
                                 "/api/v1/veo/**",  // Veo API 전체 공개
-                                "/api/v1/runway/**",  // Runway API 전체 공개
                                 "/public/**",
                                 "/api/v1/swagger-ui.html",
                                 "/api/v1/swagger-ui/**",
