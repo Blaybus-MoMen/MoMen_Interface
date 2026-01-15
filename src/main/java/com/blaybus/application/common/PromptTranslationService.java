@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 /**
  * 프롬프트 번역 서비스
- * 한글 프롬프트를 영어로 자동 번역하여 Veo/Runway API에 전달
+ * 한글 프롬프트를 영어로 자동 번역하여 Veo API에 전달
  */
 @Slf4j
 @Service
