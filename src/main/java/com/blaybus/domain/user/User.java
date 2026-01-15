@@ -51,6 +51,20 @@ public class User extends BaseTimeEntity {
     @Column(name = "TERMS_AGREED_AT")
     private LocalDateTime termsAgreedAt;
 
+    // OAuth 관련 필드
+    @Enumerated(EnumType.STRING)
+    @Column(name = "OAUTH_PROVIDER", length = 20)
+    private OAuthProvider oauthProvider;
+
+    @Column(name = "OAUTH_ID", length = 255)
+    private String oauthId;
+
+    @Column(name = "OAUTH_CONNECTED_AT")
+    private LocalDateTime oauthConnectedAt;
+
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
     @Builder
     public User(String email, String passwordHash, String name, String phone, UserRole role) {
         this.email = email;
@@ -122,5 +136,49 @@ public class User extends BaseTimeEntity {
     // 역할 변경
     public void changeRole(UserRole role) {
         this.role = role;
+    }
+
+    // OAuth 사용자 생성을 위한 정적 팩토리 메서드
+    public static User createOAuthUser(String email, String name, OAuthProvider provider,
+                                        String oauthId, String profileImageUrl) {
+        User user = new User();
+        user.email = email;
+        user.name = name;
+        user.oauthProvider = provider;
+        user.oauthId = oauthId;
+        user.oauthConnectedAt = LocalDateTime.now();
+        user.profileImageUrl = profileImageUrl;
+        user.role = UserRole.STUDENT;
+        user.isActive = true;
+        user.emailVerified = true;  // 소셜 로그인은 이메일 인증 완료로 간주
+        user.emailVerifiedAt = LocalDateTime.now();
+        return user;
+    }
+
+    // OAuth 연결
+    public void connectOAuth(OAuthProvider provider, String oauthId, String profileImageUrl) {
+        this.oauthProvider = provider;
+        this.oauthId = oauthId;
+        this.oauthConnectedAt = LocalDateTime.now();
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
+
+    // OAuth 연결 해제
+    public void disconnectOAuth() {
+        this.oauthProvider = null;
+        this.oauthId = null;
+        this.oauthConnectedAt = null;
+    }
+
+    // 프로필 이미지 업데이트
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    // OAuth 사용자인지 확인
+    public boolean isOAuthUser() {
+        return this.oauthProvider != null && this.oauthId != null;
     }
 }
