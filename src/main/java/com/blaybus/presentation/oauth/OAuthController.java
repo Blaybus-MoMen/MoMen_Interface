@@ -27,9 +27,7 @@ public class OAuthController {
 
     private final KakaoOAuthService kakaoOAuthService;
 
-    /**
-     * 카카오 로그인
-     */
+    // 카카오 로그인
     @PostMapping("/kakao/login")
     @Operation(summary = "카카오 로그인", description = "카카오 인증 코드로 로그인합니다")
     public ResponseEntity<ApiResponse<OAuthLoginResponse>> kakaoLogin(
@@ -41,32 +39,21 @@ public class OAuthController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    /**
-     * 카카오 로그인 URL 조회
-     */
+    // 카카오 로그인 URL 조회
     @GetMapping("/kakao/login-url")
     @Operation(summary = "카카오 로그인 URL 조회", description = "카카오 로그인 페이지 URL을 반환합니다")
-    public ResponseEntity<ApiResponse<Map<String, String>>> getKakaoLoginUrl(
-            @Parameter(description = "리다이렉트 URI (선택)")
-            @RequestParam(required = false) String redirectUri) {
-
+    public ResponseEntity<ApiResponse<Map<String, String>>> getKakaoLoginUrl(@Parameter(description = "리다이렉트 URI (선택)") @RequestParam(required = false) String redirectUri) {
         String loginUrl = kakaoOAuthService.getKakaoLoginUrl(redirectUri);
         return ResponseEntity.ok(ApiResponse.success(Map.of("loginUrl", loginUrl)));
     }
 
-    /**
-     * 카카오 콜백 (프론트엔드 없이 테스트용)
-     */
+    // 카카오 콜백 (프론트엔드 없이 테스트용)
     @GetMapping("/kakao/callback")
     @Operation(summary = "카카오 콜백 (테스트용)", description = "카카오 OAuth 콜백을 처리합니다")
-    public ResponseEntity<ApiResponse<OAuthLoginResponse>> kakaoCallback(
-            @Parameter(description = "카카오 인증 코드")
-            @RequestParam String code,
-            @Parameter(description = "에러 (있는 경우)")
-            @RequestParam(required = false) String error,
-            @Parameter(description = "에러 설명 (있는 경우)")
-            @RequestParam(required = false, name = "error_description") String errorDescription) {
-
+    public ResponseEntity<ApiResponse<OAuthLoginResponse>> kakaoCallback(@Parameter(description = "카카오 인증 코드") @RequestParam String code,
+                                                                         @Parameter(description = "에러 (있는 경우)") @RequestParam(required = false) String error,
+                                                                         @Parameter(description = "에러 설명 (있는 경우)") @RequestParam(required = false, name = "error_description") String errorDescription) {
+        // 카카오 로그인 에러 처리
         if (error != null) {
             log.error("카카오 로그인 에러: {} - {}", error, errorDescription);
             return ResponseEntity.badRequest().body(ApiResponse.error(error + ": " + errorDescription, "OAUTH_ERROR"));

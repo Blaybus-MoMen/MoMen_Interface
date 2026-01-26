@@ -36,7 +36,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(jwt)) {
             // 블랙리스트 체크
             if (tokenRedisService.isBlacklisted(jwt)) {
-                log.debug("블랙리스트된 토큰 접근 시도");
                 filterChain.doFilter(request, response);
                 return;
             }
