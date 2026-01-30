@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build output (Docker에서 다시 빌드)
+build/
+.gradle/
+out/
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.project
+.settings
+.classpath
+
+# Logs
+logs/
+*.log
+
+# Docs (이미지에 불필요)
+docs/
+*.md
+!README.md
+
+# Jenkins / CI
+Jenkinsfile
+.github/
+
+# Test / local
+src/test/
+**/application-local.properties
+**/.env
+**/.env.*
+
+# 기타
+.DS_Store
+*.swp
+*.bak
