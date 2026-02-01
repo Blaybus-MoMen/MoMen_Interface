@@ -3,144 +3,159 @@ package com.momen.application.auth;
 import com.momen.application.auth.dto.LoginRequest;
 import com.momen.application.auth.dto.SignupRequest;
 import com.momen.application.auth.dto.TokenResponse;
-import com.momen.core.error.enums.ErrorCode;
-import com.momen.core.exception.BusinessException;
+import com.momen.application.user.dto.UserUpdateRequest;
+import com.momen.domain.mentoring.Mentee;
+import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.user.User;
+import com.momen.domain.user.UserRole;
+import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
+import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.domain.user.UserRepository;
-import com.momen.infrastructure.redis.EmailVerificationRedisService;
 import com.momen.infrastructure.redis.TokenRedisService;
 import com.momen.infrastructure.security.JwtTokenProvider;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 인증 서비스
- */
-@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final MentorRepository mentorRepository;
+    private final MenteeRepository menteeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenRedisService tokenRedisService;
-    private final EmailVerificationRedisService emailVerificationRedisService;
 
-    // 회원가입
     @Transactional
     public TokenResponse signup(SignupRequest request) {
 
-        // 이메일 중복 체크
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다");
         }
 
-        // 이메일 인증 완료 여부 확인 (Redis에서 확인)
-        if (!emailVerificationRedisService.isVerified(request.getEmail())) {
-            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+        UserRole role = UserRole.STUDENT;
+        if ("MENTOR".equals(request.getRole())) {
+            role = UserRole.ADMIN;
         }
 
-        // 비밀번호 해시화
-        String passwordHash = passwordEncoder.encode(request.getPassword());
-
-        // User 생성
         User user = User.builder()
                 .email(request.getEmail())
-                .passwordHash(passwordHash)
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
-                .phone(request.getPhone())
-                .role(request.getRole()) // null이면 User 엔티티에서 STUDENT로 기본값 설정됨
+                .role(role)
                 .build();
+        userRepository.save(user);
 
-        // 이메일 인증 완료 상태로 설정
-        user.verifyEmail();
-
-        // 저장
-        User savedUser = userRepository.save(user);
-
-        // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(savedUser.getId(), savedUser.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(savedUser.getId(), savedUser.getEmail());
-
-        // Redis에 Refresh Token 저장 (기존 토큰은 자동으로 덮어씌워짐)
-        tokenRedisService.saveRefreshToken(savedUser.getId(), refreshToken);
-
-        return new TokenResponse(accessToken, refreshToken, savedUser.getId(), savedUser.getEmail(), savedUser.getName(), savedUser.getRole().name());
-    }
-
-    // 로그인
-    @Transactional
-    public TokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
-
-        // 비활성화된 계정 체크
-        if (!user.getIsActive()) {
-            throw new BusinessException(ErrorCode.ACCOUNT_INACTIVE);
+        if ("MENTOR".equals(request.getRole())) {
+            Mentor mentor = new Mentor(user, request.getIntro());
+            mentorRepository.save(mentor);
+        } else if ("MENTEE".equals(request.getRole())) {
+            Mentee mentee = new Mentee(user, null, request.getGrade(), request.getTargetUniversity());
+            menteeRepository.save(mentee);
         }
 
-        // 비밀번호 검증
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
-        }
-
-        // JWT 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getEmail());
-
-        // Redis에 Refresh Token 저장 (기존 토큰은 자동으로 덮어씌워짐)
         tokenRedisService.saveRefreshToken(user.getId(), refreshToken);
 
-        return new TokenResponse(accessToken, refreshToken, user.getId(), user.getEmail(), user.getName(), user.getRole().name());
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .name(user.getName())
+                .role(user.getRole().name())
+                .build();
     }
 
-    // Refresh Token을 사용해 Access Token 재발급
-    @Transactional
+    @Transactional(readOnly = true)
+    public TokenResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다");
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getEmail());
+        tokenRedisService.saveRefreshToken(user.getId(), refreshToken);
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .name(user.getName())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public TokenResponse refresh(String refreshToken) {
-        // 토큰 유효성 검사 (서명/만료)
+        if (!tokenRedisService.existsRefreshTokenByToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다");
+        }
+
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+            throw new IllegalArgumentException("만료되거나 유효하지 않은 Refresh Token입니다");
         }
 
-        // Redis에 저장된 Refresh Token인지 확인
-        Long userId = tokenRedisService.getUserIdByRefreshToken(refreshToken);
-        if (userId == null || !tokenRedisService.existsRefreshToken(userId)) {
-            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
-        }
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        // 기존 refresh token 삭제
+        tokenRedisService.deleteRefreshTokenByToken(refreshToken);
 
-        // 토큰 재발급
-        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+        // 새 토큰 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, email);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, email);
+        tokenRedisService.saveRefreshToken(userId, newRefreshToken);
 
-        return new TokenResponse(newAccessToken, refreshToken, user.getId(), user.getEmail(), user.getName(), user.getRole().name());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        return TokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .userId(userId)
+                .name(user.getName())
+                .role(user.getRole().name())
+                .build();
     }
 
-    // 로그아웃
     @Transactional
     public void logout(Long userId, String accessToken) {
-        // 사용자 확인
-        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        // Redis에서 Refresh Token 삭제
+        // Refresh Token 삭제
         tokenRedisService.deleteRefreshToken(userId);
 
-        // Access Token을 블랙리스트에 추가 (만료 시간까지)
-        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(jwtTokenProvider.getSecretKey())
-                    .build()
-                    .parseClaimsJws(accessToken)
-                    .getBody();
-            long expirationTime = claims.getExpiration().getTime();
-            tokenRedisService.addToBlacklist(accessToken, expirationTime);
+        // Access Token 블랙리스트에 추가
+        if (accessToken != null) {
+            try {
+                long expiration = jwtTokenProvider.getUserIdFromToken(accessToken);
+                // 남은 만료 시간만큼 블랙리스트에 유지
+                tokenRedisService.addToBlacklist(accessToken, System.currentTimeMillis() + 1800000);
+            } catch (Exception e) {
+                // 이미 만료된 토큰이면 블랙리스트 추가 불필요
+            }
+        }
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, UserUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다");
+            }
+            user.changePassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        if (request.getName() != null) {
+            user.updateName(request.getName());
         }
     }
 }
