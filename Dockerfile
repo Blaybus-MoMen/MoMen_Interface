@@ -27,6 +27,11 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# Timezone 설정 (한국 시간)
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
+    echo "Asia/Seoul" > /etc/timezone
+
 # 보안: non-root 사용자
 RUN addgroup -g 1000 app && adduser -u 1000 -G app -D app
 USER app
@@ -36,4 +41,5 @@ COPY --from=builder /app/app.jar app.jar
 # Spring Boot actuator / 헬스체크
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# JVM 옵션 추가 (난수 생성 속도 향상, 힙 메모리 설정 가능)
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
