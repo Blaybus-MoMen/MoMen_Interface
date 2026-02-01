@@ -72,14 +72,8 @@ public enum ErrorCode {
     VEO_VIDEO_NOT_READY(9006, "비디오가 아직 준비되지 않았습니다"),
     VEO_QUOTA_EXCEEDED(9007, "Veo API 할당량을 초과했습니다"),
 
-    // OAuth 관련 에러 (10000번대)
-    OAUTH_TOKEN_ERROR(10000, "OAuth 토큰 획득에 실패했습니다"),
-    OAUTH_USER_INFO_ERROR(10001, "OAuth 사용자 정보 조회에 실패했습니다"),
-    OAUTH_PROVIDER_NOT_SUPPORTED(10002, "지원하지 않는 OAuth 제공자입니다"),
-    OAUTH_ALREADY_CONNECTED(10003, "이미 연결된 소셜 계정입니다"),
-    OAUTH_NOT_CONNECTED(10004, "연결된 소셜 계정이 없습니다"),
-    OAUTH_INVALID_STATE(10005, "유효하지 않거나 만료된 state입니다"),
-    OAUTH_INVALID_REDIRECT_URI(10006, "허용되지 않은 리다이렉트 URI입니다");
+    // 리프레시 토큰 관련 에러 (10000번대)
+    INVALID_REFRESH_TOKEN(10000, "유효하지 않은 리프레시 토큰입니다");
 
     private final int code;
     private final String message;
