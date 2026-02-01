@@ -16,7 +16,6 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        // 보안 스키마 정의
         Components components = new Components()
                 .addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
@@ -26,19 +25,19 @@ public class SwaggerConfig {
                         .name("Authorization")
                         .description("JWT 토큰을 입력하세요. Bearer 접두사 없이 토큰만 입력하세요."));
 
-        // Info 메타데이터
         Info info = new Info()
-                .title("Sandwitch API")
-                .description("Adaptive Capability Index (ACI) 플랫폼, Sandwitch REST API 문서")
+                .title("Momen API")
+                .description("Momen 학습 플랫폼 REST API 문서\n\n"
+                        + "- 인증: JWT 기반 (Bearer Token)\n"
+                        + "- 회원가입/로그인 후 발급받은 Access Token을 Authorize에 입력하세요")
                 .version("1.0.0");
 
-        // SecurityRequirement - 모든 API에 기본 적용 -> 보안 규칙 설정
         SecurityRequirement securityRequirement = new SecurityRequirement()
                 .addList(BEARER_SCHEME);
 
         return new OpenAPI()
                 .info(info)
                 .components(components)
-                .addSecurityItem(securityRequirement);  // 모든 API에 JWT 인증 적용
+                .addSecurityItem(securityRequirement);
     }
 }
