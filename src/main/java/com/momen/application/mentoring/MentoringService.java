@@ -1,5 +1,6 @@
 package com.momen.application.mentoring;
 
+import com.momen.application.mentoring.dto.MenteeResponse;
 import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.user.User;
@@ -9,6 +10,9 @@ import com.momen.infrastructure.jpa.user.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +35,16 @@ public class MentoringService {
     public Long registerMentee(Long userId, String grade, String targetUniv) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        // 멘토는 나중에 매칭 (null 허용)
         Mentee mentee = new Mentee(user, null, grade, targetUniv);
         return menteeRepository.save(mentee).getId();
+    }
+
+    // 멘토의 담당 멘티 목록 조회
+    public List<MenteeResponse> getMenteeList(Long mentorUserId) {
+        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        return menteeRepository.findByMentorId(mentor.getId()).stream()
+                .map(MenteeResponse::from)
+                .collect(Collectors.toList());
     }
 }
