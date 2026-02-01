@@ -1,6 +1,5 @@
 package com.momen.infrastructure.jpa.user;
 
-import com.momen.domain.user.OAuthProvider;
 import com.momen.domain.user.User;
 import com.momen.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,10 +42,5 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public List<User> findAll() {
         return userJpaRepository.findAll();
-    }
-
-    @Override
-    public Optional<User> findByOauthProviderAndOauthId(OAuthProvider provider, String oauthId) {
-        return userJpaRepository.findByOauthProviderAndOauthId(provider, oauthId);
     }
 }
