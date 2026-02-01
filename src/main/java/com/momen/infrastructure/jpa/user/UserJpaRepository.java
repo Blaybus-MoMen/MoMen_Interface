@@ -1,7 +1,7 @@
 package com.momen.infrastructure.jpa.user;
 
-import com.momen.domain.user.OAuthProvider;
 import com.momen.domain.user.User;
+import com.momen.domain.user.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -15,5 +15,5 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
-    Optional<User> findByOauthProviderAndOauthId(OAuthProvider provider, String oauthId);
+    long countByRole(UserRole role);
 }
