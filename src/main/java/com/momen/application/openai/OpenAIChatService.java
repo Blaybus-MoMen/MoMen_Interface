@@ -7,7 +7,7 @@ import com.momen.application.openai.dto.SimpleChatResponse;
 import com.momen.core.error.enums.ErrorCode;
 import com.momen.core.exception.BusinessException;
 import com.momen.domain.openai.OpenAIChatLog;
-import com.momen.domain.openai.OpenAIChatLogRepository;
+import com.momen.infrastructure.jpa.openai.OpenAIChatLogRepository;
 import com.momen.domain.openai.OpenAIChatStatus;
 import com.momen.domain.user.User;
 import com.momen.domain.user.UserRepository;
