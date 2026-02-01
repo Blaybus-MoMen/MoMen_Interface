@@ -5,7 +5,7 @@ import com.momen.application.openai.dto.DalleGenerateResponse;
 import com.momen.core.error.enums.ErrorCode;
 import com.momen.core.exception.BusinessException;
 import com.momen.domain.openai.DalleGenerationLog;
-import com.momen.domain.openai.DalleGenerationLogRepository;
+import com.momen.infrastructure.jpa.openai.DalleGenerationLogRepository;
 import com.momen.domain.openai.DalleGenerationStatus;
 import com.momen.domain.user.User;
 import com.momen.domain.user.UserRepository;
