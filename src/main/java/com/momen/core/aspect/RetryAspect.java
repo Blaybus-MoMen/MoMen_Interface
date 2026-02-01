@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 
 @Slf4j
 @Aspect
-@Component
+@Component("customRetryAspect")
 public class RetryAspect {
 
     /**
