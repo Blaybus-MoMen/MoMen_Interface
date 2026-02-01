@@ -1,12 +1,12 @@
 package com.momen.application.planner;
 
-import com.momen.application.planner.dto.PlannerCreateRequest;
-import com.momen.application.planner.dto.TodoCreateRequest;
-import com.momen.application.planner.dto.PlannerResponse;
+import com.momen.application.planner.dto.*;
 import com.momen.domain.mentoring.Mentee;
+import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.planner.Planner;
 import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
+import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.PlannerRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,14 +25,13 @@ public class PlannerService {
     private final PlannerRepository plannerRepository;
     private final TodoRepository todoRepository;
     private final MenteeRepository menteeRepository;
+    private final MentorRepository mentorRepository;
 
-    // 플래너 생성 (또는 조회)
     @Transactional
     public Long createPlanner(Long userId, PlannerCreateRequest request) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        // 이미 있으면 그 ID 반환 (중복 생성 방지)
         return plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), request.getDate())
                 .map(Planner::getId)
                 .orElseGet(() -> {
@@ -41,7 +41,6 @@ public class PlannerService {
                 });
     }
 
-    // 날짜별 플래너 조회 (Planner + Todos)
     public PlannerResponse getPlanner(Long userId, LocalDate date) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
@@ -50,17 +49,25 @@ public class PlannerService {
                 .orElseThrow(() -> new IllegalArgumentException("Planner not found for date: " + date));
 
         List<Todo> todos = todoRepository.findByPlannerId(planner.getId());
-
         return PlannerResponse.from(planner, todos);
     }
 
-    // 할 일(Todo) 추가
+    // 멘토가 멘티의 플래너 조회
+    public PlannerResponse getPlannerForMentee(Long mentorUserId, Long menteeId, LocalDate date) {
+        mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(menteeId, date)
+                .orElseThrow(() -> new IllegalArgumentException("Planner not found for date: " + date));
+
+        List<Todo> todos = todoRepository.findByPlannerId(planner.getId());
+        return PlannerResponse.from(planner, todos);
+    }
+
     @Transactional
     public Long addTodo(Long userId, Long plannerId, TodoCreateRequest request) {
         Planner planner = plannerRepository.findById(plannerId)
                 .orElseThrow(() -> new IllegalArgumentException("Planner not found"));
-        
-        // TODO: 권한 체크 (본인 플래너인지)
 
         Todo todo = new Todo(
                 planner,
@@ -68,8 +75,121 @@ public class PlannerService {
                 request.getSubject(),
                 request.getGoalDescription(),
                 request.getIsFixed(),
-                userId // createdBy
+                userId
         );
         return todoRepository.save(todo).getId();
+    }
+
+    // 멘토가 멘티에게 할 일 등록
+    @Transactional
+    public Long addTodoForMentee(Long mentorUserId, Long menteeId, LocalDate date, TodoCreateRequest request) {
+        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Mentee mentee = menteeRepository.findById(menteeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
+                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+
+        Todo todo = new Todo(
+                planner,
+                request.getTitle(),
+                request.getSubject(),
+                request.getGoalDescription(),
+                true, // isFixed = true (멘토 지정)
+                mentor.getUser().getId()
+        );
+        return todoRepository.save(todo).getId();
+    }
+
+    // Todo 업데이트 (완료 여부, 공부 시간)
+    @Transactional
+    public void updateTodo(Long userId, Long todoId, TodoUpdateRequest request) {
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (request.getIsCompleted() != null) {
+            if (Boolean.TRUE.equals(request.getIsCompleted())) {
+                todo.complete();
+            } else {
+                todo.uncomplete();
+            }
+        }
+        if (request.getStudyTime() != null) {
+            todo.updateStudyTime(request.getStudyTime());
+        }
+    }
+
+    // 플래너 코멘트 수정
+    @Transactional
+    public void updatePlannerComment(Long userId, Long plannerId, PlannerCommentUpdateRequest request) {
+        Planner planner = plannerRepository.findById(plannerId)
+                .orElseThrow(() -> new IllegalArgumentException("Planner not found"));
+        planner.updateStudentComment(request.getStudentComment(), request.getMoodEmoji());
+    }
+
+    // 캘린더 조회 (기간별)
+    public List<CalendarDayResponse> getCalendar(Long userId, LocalDate startDate, LocalDate endDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        List<Planner> planners = plannerRepository.findByMenteeIdAndPlannerDateBetween(mentee.getId(), startDate, endDate);
+
+        return planners.stream().map(planner -> {
+            List<Todo> todos = todoRepository.findByPlannerId(planner.getId());
+            return CalendarDayResponse.from(planner, todos);
+        }).collect(Collectors.toList());
+    }
+
+    // 마이페이지 (성취율 등)
+    public MypageResponse getMypage(Long userId) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        // 최근 30일 플래너 조회
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(30);
+        List<Planner> planners = plannerRepository.findByMenteeIdAndPlannerDateBetween(mentee.getId(), startDate, endDate);
+
+        List<Todo> allTodos = new ArrayList<>();
+        for (Planner p : planners) {
+            allTodos.addAll(todoRepository.findByPlannerId(p.getId()));
+        }
+
+        int totalTodos = allTodos.size();
+        int completedTodos = (int) allTodos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
+        double overallRate = totalTodos > 0 ? (double) completedTodos / totalTodos * 100.0 : 0.0;
+
+        // 과목별 성취율
+        Map<String, Double> subjectRates = allTodos.stream()
+                .collect(Collectors.groupingBy(Todo::getSubject))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> {
+                            long total = e.getValue().size();
+                            long completed = e.getValue().stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
+                            return total > 0 ? Math.round((double) completed / total * 1000.0) / 10.0 : 0.0;
+                        }
+                ));
+
+        int totalMinutes = allTodos.stream()
+                .filter(t -> t.getStudyTime() != null)
+                .mapToInt(Todo::getStudyTime)
+                .sum();
+
+        String mentorName = mentee.getMentor() != null ? mentee.getMentor().getUser().getName() : null;
+
+        return MypageResponse.builder()
+                .name(mentee.getUser().getName())
+                .grade(mentee.getGrade())
+                .targetUniversity(mentee.getTargetUniversity())
+                .mentorName(mentorName)
+                .totalTodos(totalTodos)
+                .completedTodos(completedTodos)
+                .overallCompletionRate(Math.round(overallRate * 10.0) / 10.0)
+                .subjectCompletionRates(subjectRates)
+                .totalStudyMinutes(totalMinutes)
+                .build();
     }
 }
