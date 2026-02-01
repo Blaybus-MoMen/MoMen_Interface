@@ -50,4 +50,16 @@ public class Todo extends BaseTimeEntity {
         this.isFixed = isFixed;
         this.createdBy = createdBy;
     }
+
+    public void complete() {
+        this.isCompleted = true;
+    }
+
+    public void uncomplete() {
+        this.isCompleted = false;
+    }
+
+    public void updateStudyTime(Integer studyTime) {
+        this.studyTime = studyTime;
+    }
 }
