@@ -34,23 +34,18 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configure(http))  // CORS 활성화 (WebConfig 설정 사용)
+                .cors(cors -> cors.configure(http))
 
-                // 세션 사용 안함 (Stateless)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
                 .authorizeHttpRequests(authorize -> authorize
-                        // OAuth 인증 필요 엔드포인트
-                        .requestMatchers("/api/v1/oauth/connections", "/api/v1/oauth/kakao/unlink").authenticated()
-                        // 공개 엔드포인트
                         .requestMatchers(
                                 "/api/v1/auth/**",
-                                "/api/v1/oauth/**",  // OAuth 소셜 로그인 (login, login-url, callback)
                                 "/api/v1/email-verification/**",
                                 "/api/v1/openai/**",
-                                "/api/v1/veo/**",  // Veo API 전체 공개
+                                "/api/v1/veo/**",
                                 "/public/**",
                                 "/api/v1/swagger-ui.html",
                                 "/api/v1/swagger-ui/**",
@@ -58,11 +53,9 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
 
-                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
 
-                // JWT 필터 추가
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -78,14 +71,10 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * HttpFirewall 설정
-     * URL 인코딩된 슬래시 허용 (Veo API의 operationName에 슬래시 포함)
-     */
     @Bean
     public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowUrlEncodedSlash(true);  // %2F 허용
+        firewall.setAllowUrlEncodedSlash(true);
         firewall.setAllowSemicolon(true);
         firewall.setAllowUrlEncodedPercent(true);
         firewall.setAllowBackSlash(true);
@@ -93,9 +82,6 @@ public class SecurityConfig {
         return firewall;
     }
 
-    /**
-     * WebSecurity에 커스텀 HttpFirewall 적용
-     */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
