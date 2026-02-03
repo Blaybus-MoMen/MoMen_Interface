@@ -42,6 +42,9 @@ public class Feedback extends BaseTimeEntity {
     @Column(name = "english_summary", columnDefinition = "TEXT")
     private String englishSummary;
 
+    @Column(name = "science_summary", columnDefinition = "TEXT")
+    private String scienceSummary;
+
     @Column(name = "total_review", columnDefinition = "TEXT")
     private String totalReview;
 
@@ -50,10 +53,11 @@ public class Feedback extends BaseTimeEntity {
         this.mentor = mentor;
     }
 
-    public void updateSummaries(String korean, String math, String english, String total) {
+    public void updateSummaries(String korean, String math, String english, String science, String total) {
         this.koreanSummary = korean;
         this.mathSummary = math;
         this.englishSummary = english;
+        this.scienceSummary = science;
         this.totalReview = total;
     }
 
