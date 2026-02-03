@@ -4,6 +4,7 @@ package com.momen.domain.user;
  * 사용자 역할
  */
 public enum UserRole {
-    STUDENT,    // 학생
+    MENTEE,     // 멘티
+    MENTOR,     // 멘토
     ADMIN       // 관리자
 }
