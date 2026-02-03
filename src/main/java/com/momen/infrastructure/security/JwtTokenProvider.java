@@ -30,13 +30,13 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String createAccessToken(Long userId, String email) {
+    public String createAccessToken(Long userId, String loginId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
-                .claim("email", email)
+                .claim("loginId", loginId)
                 .setIssuedAt(now)
                 .setExpiration(validity)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -44,13 +44,13 @@ public class JwtTokenProvider {
     }
 
     // Refresh Token 생성
-    public String createRefreshToken(Long userId, String email) {
+    public String createRefreshToken(Long userId, String loginId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
-                .claim("email", email)
+                .claim("loginId", loginId)
                 .setIssuedAt(now)
                 .setExpiration(validity)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -63,10 +63,10 @@ public class JwtTokenProvider {
         return Long.parseLong(claims.getSubject());
     }
 
-    // Token에서 Email 추출
-    public String getEmailFromToken(String token) {
+    // Token에서 loginId 추출
+    public String getLoginIdFromToken(String token) {
         Claims claims = parseClaims(token);
-        return claims.get("email", String.class);
+        return claims.get("loginId", String.class);
     }
 
     // Token 유효성 검증

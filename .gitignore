@@ -39,3 +39,4 @@ out/
 .claude
 /wj
 .env
+logs

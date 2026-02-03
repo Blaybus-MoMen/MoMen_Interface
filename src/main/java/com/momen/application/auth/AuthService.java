@@ -32,13 +32,14 @@ public class AuthService {
     @Transactional
     public TokenResponse signup(SignupRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다");
+        if (userRepository.existsByLoginId(request.getLoginId())) {
+            throw new IllegalArgumentException("이미 존재하는 아이디입니다");
         }
 
         UserRole role = "MENTOR".equals(request.getRole()) ? UserRole.MENTOR : UserRole.MENTEE;
 
         User user = User.builder()
+                .loginId(request.getLoginId())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
@@ -54,8 +55,8 @@ public class AuthService {
             menteeRepository.save(mentee);
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getEmail());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId());
         tokenRedisService.saveRefreshToken(user.getId(), refreshToken);
 
         return TokenResponse.builder()
@@ -69,15 +70,15 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다"));
+        User user = userRepository.findByLoginId(request.getLoginId())
+                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다");
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getEmail());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getLoginId());
         tokenRedisService.saveRefreshToken(user.getId(), refreshToken);
 
         return TokenResponse.builder()
@@ -100,14 +101,14 @@ public class AuthService {
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
-        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
+        String loginId = jwtTokenProvider.getLoginIdFromToken(refreshToken);
 
         // 기존 refresh token 삭제
         tokenRedisService.deleteRefreshTokenByToken(refreshToken);
 
         // 새 토큰 발급
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, email);
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, email);
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, loginId);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, loginId);
         tokenRedisService.saveRefreshToken(userId, newRefreshToken);
 
         User user = userRepository.findById(userId)

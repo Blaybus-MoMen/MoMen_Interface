@@ -23,7 +23,10 @@ public class User extends BaseTimeEntity {
     @Column(name = "USER_ID")
     private Long id;
 
-    @Column(name = "EMAIL", unique = true, length = 255)
+    @Column(name = "LOGIN_ID", unique = true, nullable = false, length = 50)
+    private String loginId;
+
+    @Column(name = "EMAIL", length = 255)
     private String email;
 
     @Column(name = "PASSWORD_HASH", length = 255)
@@ -55,7 +58,8 @@ public class User extends BaseTimeEntity {
     private String profileImageUrl;
 
     @Builder
-    public User(String email, String passwordHash, String name, String phone, UserRole role) {
+    public User(String loginId, String email, String passwordHash, String name, String phone, UserRole role) {
+        this.loginId = loginId;
         this.email = email;
         this.passwordHash = passwordHash;
         this.name = name;
