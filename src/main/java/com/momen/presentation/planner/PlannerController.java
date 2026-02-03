@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,6 +42,42 @@ public class PlannerController {
                                         @Parameter(description = "플래너 ID") @PathVariable Long plannerId,
                                         @RequestBody TodoCreateRequest request) {
         return ResponseEntity.ok(plannerService.addTodo(userId, plannerId, request));
+    }
+
+    @Operation(summary = "할 일 일괄 생성", description = "한 플래너에 여러 할 일을 한 번에 추가합니다")
+    @PostMapping("/{plannerId}/todos/batch")
+    public ResponseEntity<TodoBatchCreateResponse> addTodoBatch(@RequestAttribute("userId") Long userId,
+                                                                @Parameter(description = "플래너 ID") @PathVariable Long plannerId,
+                                                                @Valid @RequestBody TodoBatchCreateRequest request) {
+        List<Long> ids = plannerService.addTodoBatch(userId, plannerId, request);
+        return ResponseEntity.ok(TodoBatchCreateResponse.builder().todoIds(ids).count(ids.size()).build());
+    }
+
+    @Operation(summary = "할 일 일괄 수정", description = "여러 할 일의 완료 여부, 공부 시간 등을 한 번에 수정합니다")
+    @PatchMapping("/todos/batch")
+    public ResponseEntity<Void> updateTodoBatch(@RequestAttribute("userId") Long userId,
+                                               @Valid @RequestBody TodoBatchUpdateRequest request) {
+        plannerService.updateTodoBatch(userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "멘티 할 일 일괄 생성 (멘토)", description = "멘토가 특정 날짜에 멘티에게 여러 할 일을 한 번에 등록합니다")
+    @PostMapping("/mentees/{menteeId}/todos/batch")
+    public ResponseEntity<TodoBatchCreateResponse> addTodoBatchForMentee(@RequestAttribute("userId") Long userId,
+                                                                         @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+                                                                         @Parameter(description = "날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                                         @Valid @RequestBody TodoBatchCreateRequest request) {
+        List<Long> ids = plannerService.addTodoBatchForMentee(userId, menteeId, date, request);
+        return ResponseEntity.ok(TodoBatchCreateResponse.builder().todoIds(ids).count(ids.size()).build());
+    }
+
+    @Operation(summary = "요일 반복 할 일 생성 (멘토)", description = "선택한 요일에 해당 월 전체 주차에 동일 할 일을 반복 등록합니다")
+    @PostMapping("/mentees/{menteeId}/todos/repeat-by-weekdays")
+    public ResponseEntity<TodoBatchCreateResponse> addTodosForMonthByWeekdays(@RequestAttribute("userId") Long userId,
+                                                                               @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+                                                                               @Valid @RequestBody TodoRepeatByWeekdaysRequest request) {
+        List<Long> ids = plannerService.addTodosForMonthByWeekdays(userId, menteeId, request);
+        return ResponseEntity.ok(TodoBatchCreateResponse.builder().todoIds(ids).count(ids.size()).build());
     }
 
     @Operation(summary = "할 일 수정", description = "할 일의 완료 여부, 공부 시간을 수정합니다")
