@@ -42,13 +42,29 @@ public class Todo extends BaseTimeEntity {
     @Column(name = "created_by", nullable = false)
     private Long createdBy; // 작성자 ID
 
-    public Todo(Planner planner, String title, String subject, String goalDescription, Boolean isFixed, Long createdBy) {
+    @Column(name = "day_of_week", length = 10)
+    private String dayOfWeek; // MONDAY, TUESDAY, ... nullable
+
+    @Column(name = "worksheet_file_url", length = 500)
+    private String worksheetFileUrl; // 학습지파일 URL, nullable
+
+    @Column(name = "mentor_confirmed")
+    private Boolean mentorConfirmed = false; // 멘토확인여부
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_todo_id")
+    private Todo parentTodo; // 반복 그룹 추적용, nullable
+
+    public Todo(Planner planner, String title, String subject, String goalDescription,
+                Boolean isFixed, Long createdBy, String dayOfWeek, String worksheetFileUrl) {
         this.planner = planner;
         this.title = title;
         this.subject = subject;
         this.goalDescription = goalDescription;
         this.isFixed = isFixed;
         this.createdBy = createdBy;
+        this.dayOfWeek = dayOfWeek;
+        this.worksheetFileUrl = worksheetFileUrl;
     }
 
     public void complete() {
@@ -61,5 +77,23 @@ public class Todo extends BaseTimeEntity {
 
     public void updateStudyTime(Integer studyTime) {
         this.studyTime = studyTime;
+    }
+
+    public void updateContent(String title, String subject, String goalDescription,
+                              String dayOfWeek, String worksheetFileUrl, Boolean mentorConfirmed) {
+        this.title = title;
+        this.subject = subject;
+        this.goalDescription = goalDescription;
+        this.dayOfWeek = dayOfWeek;
+        this.worksheetFileUrl = worksheetFileUrl;
+        this.mentorConfirmed = mentorConfirmed;
+    }
+
+    public void reassignPlanner(Planner newPlanner) {
+        this.planner = newPlanner;
+    }
+
+    public void setParentTodo(Todo parent) {
+        this.parentTodo = parent;
     }
 }
