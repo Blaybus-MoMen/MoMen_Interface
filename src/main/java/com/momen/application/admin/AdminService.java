@@ -20,8 +20,8 @@ public class AdminService {
 
     public AdminDashboardResponse getDashboardStats() {
         long totalUsers = userJpaRepository.count();
-        long totalMentors = userJpaRepository.countByRole(UserRole.ADMIN);
-        long totalMentees = userJpaRepository.countByRole(UserRole.STUDENT);
+        long totalMentors = userJpaRepository.countByRole(UserRole.MENTOR);
+        long totalMentees = userJpaRepository.countByRole(UserRole.MENTEE);
 
         long todaySessions = focusSessionRepository.count();
         long aiUsageCount = submissionRepository.count();

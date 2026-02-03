@@ -36,10 +36,7 @@ public class AuthService {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다");
         }
 
-        UserRole role = UserRole.STUDENT;
-        if ("MENTOR".equals(request.getRole())) {
-            role = UserRole.ADMIN;
-        }
+        UserRole role = "MENTOR".equals(request.getRole()) ? UserRole.MENTOR : UserRole.MENTEE;
 
         User user = User.builder()
                 .email(request.getEmail())
@@ -49,10 +46,10 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 
-        if ("MENTOR".equals(request.getRole())) {
+        if (role == UserRole.MENTOR) {
             Mentor mentor = new Mentor(user, request.getIntro());
             mentorRepository.save(mentor);
-        } else if ("MENTEE".equals(request.getRole())) {
+        } else {
             Mentee mentee = new Mentee(user, null, request.getGrade(), request.getTargetUniversity());
             menteeRepository.save(mentee);
         }

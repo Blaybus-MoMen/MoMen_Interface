@@ -15,7 +15,8 @@ public class CommonConstants {
     public static final String REFRESH_TOKEN_HEADER_NAME = "X-Refresh-Token";
 
     // 인증 관련 상수
-    public static final String ROLE_USER = "ROLE_USER";
+    public static final String ROLE_MENTEE = "ROLE_MENTEE";
+    public static final String ROLE_MENTOR = "ROLE_MENTOR";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
 
     // 응답 메시지

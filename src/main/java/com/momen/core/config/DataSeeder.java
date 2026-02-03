@@ -42,7 +42,7 @@ public class DataSeeder implements CommandLineRunner {
                 .passwordHash(encodedPassword)
                 .name("김멘토")
                 .phone("010-1111-1111")
-                .role(UserRole.ADMIN)
+                .role(UserRole.MENTOR)
                 .build();
         mentorUser.verifyEmail();
         userRepository.save(mentorUser);
@@ -56,7 +56,7 @@ public class DataSeeder implements CommandLineRunner {
                 .passwordHash(encodedPassword)
                 .name("이학생")
                 .phone("010-2222-2222")
-                .role(UserRole.STUDENT)
+                .role(UserRole.MENTEE)
                 .build();
         mentee1User.verifyEmail();
         userRepository.save(mentee1User);
@@ -69,7 +69,7 @@ public class DataSeeder implements CommandLineRunner {
                 .passwordHash(encodedPassword)
                 .name("박학생")
                 .phone("010-3333-3333")
-                .role(UserRole.STUDENT)
+                .role(UserRole.MENTEE)
                 .build();
         mentee2User.verifyEmail();
         userRepository.save(mentee2User);
