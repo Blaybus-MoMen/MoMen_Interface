@@ -6,6 +6,7 @@ import com.momen.application.mentoring.dto.MenteeResponse;
 import com.momen.application.planner.FeedbackService;
 import com.momen.application.planner.PlannerService;
 import com.momen.application.planner.dto.*;
+import com.momen.domain.planner.FeedbackType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -56,28 +57,41 @@ public class MentoringController {
         return ResponseEntity.ok(plannerService.addTodoForMentee(userId, menteeId, date, request));
     }
 
-    @Operation(summary = "AI 피드백 초안 생성", description = "멘토가 특정 플래너에 대한 AI 피드백 초안을 생성합니다")
-    @PostMapping("/planners/{plannerId}/feedback/draft")
+    @Operation(summary = "AI 피드백 초안 생성", description = "멘토가 특정 멘티의 기간별 AI 피드백 초안을 생성합니다")
+    @PostMapping("/mentees/{menteeId}/feedback/draft")
     public ResponseEntity<String> generateFeedbackDraft(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "플래너 ID") @PathVariable Long plannerId) {
-        return ResponseEntity.ok(feedbackService.generateFeedbackDraft(userId, plannerId));
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type,
+            @Parameter(description = "시작 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "종료 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(feedbackService.generateFeedbackDraft(userId, menteeId, type, startDate, endDate));
     }
 
-    @Operation(summary = "피드백 조회", description = "특정 플래너의 피드백을 조회합니다")
-    @GetMapping("/planners/{plannerId}/feedback")
+    @Operation(summary = "피드백 단건 조회", description = "특정 멘티의 기간별 피드백을 조회합니다")
+    @GetMapping("/mentees/{menteeId}/feedback")
     public ResponseEntity<FeedbackResponse> getFeedback(
-            @Parameter(description = "플래너 ID") @PathVariable Long plannerId) {
-        return ResponseEntity.ok(feedbackService.getFeedback(plannerId));
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type,
+            @Parameter(description = "시작 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        return ResponseEntity.ok(feedbackService.getFeedback(menteeId, type, startDate));
+    }
+
+    @Operation(summary = "피드백 목록 조회", description = "특정 멘티의 피드백 목록을 조회합니다")
+    @GetMapping("/mentees/{menteeId}/feedback/list")
+    public ResponseEntity<List<FeedbackResponse>> getFeedbackList(
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type) {
+        return ResponseEntity.ok(feedbackService.getFeedbackList(menteeId, type));
     }
 
     @Operation(summary = "피드백 작성/수정", description = "멘토가 피드백을 작성하거나 수정합니다")
-    @PostMapping("/planners/{plannerId}/feedback")
+    @PostMapping("/mentees/{menteeId}/feedback")
     public ResponseEntity<FeedbackResponse> saveFeedback(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "플래너 ID") @PathVariable Long plannerId,
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
             @RequestBody FeedbackRequest request) {
-        return ResponseEntity.ok(feedbackService.saveFeedback(userId, plannerId, request));
+        return ResponseEntity.ok(feedbackService.saveFeedback(userId, menteeId, request));
     }
 
     @Operation(summary = "주차별 피드백 AI 요약", description = "해당 월의 멘토 피드백을 주차별·항목별(국어/수학/영어/총평)로 AI 요약합니다")

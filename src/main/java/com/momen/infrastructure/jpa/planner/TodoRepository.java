@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface TodoRepository extends JpaRepository<Todo, Long> {
     List<Todo> findByPlannerId(Long plannerId);
+
+    List<Todo> findByPlannerIdIn(List<Long> plannerIds);
 }
