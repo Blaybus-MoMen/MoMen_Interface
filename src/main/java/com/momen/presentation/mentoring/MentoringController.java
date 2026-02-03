@@ -57,6 +57,15 @@ public class MentoringController {
         return ResponseEntity.ok(plannerService.addTodoForMentee(userId, menteeId, date, request));
     }
 
+    @Operation(summary = "멘티 할일 Full Sync", description = "멘토가 특정 멘티의 특정 날짜 할일을 일괄 추가/수정/삭제합니다")
+    @PutMapping("/mentees/{menteeId}/todos/sync")
+    public ResponseEntity<TodoSyncResponse> syncTodosForMentee(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @RequestBody TodoSyncRequest request) {
+        return ResponseEntity.ok(plannerService.syncTodosForMentee(userId, menteeId, request));
+    }
+
     @Operation(summary = "AI 피드백 초안 생성", description = "멘토가 특정 멘티의 기간별 AI 피드백 초안을 생성합니다")
     @PostMapping("/mentees/{menteeId}/feedback/draft")
     public ResponseEntity<String> generateFeedbackDraft(
