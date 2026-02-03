@@ -1,0 +1,3294 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Momen API",
+    "description": "Momen 학습 플랫폼 REST API 문서 - 인증: JWT 기반 (Bearer Token) - 회원가입/로그인 후 발급받은 Access Token을 Authorize에 입력하세요",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Focus & OralTest",
+      "description": "집중 세션 및 구술 테스트 API"
+    },
+    {
+      "name": "Jenkins Management",
+      "description": "Jenkins 관리 API"
+    },
+    {
+      "name": "Admin",
+      "description": "관리자 API"
+    },
+    {
+      "name": "Study",
+      "description": "학습 과제 및 오답노트 API"
+    },
+    {
+      "name": "Email Verification",
+      "description": "이메일 인증 API"
+    },
+    {
+      "name": "User",
+      "description": "사용자 관리 API"
+    },
+    {
+      "name": "OpenAI",
+      "description": "OpenAI ChatGPT 및 DALL-E API"
+    },
+    {
+      "name": "Mentoring",
+      "description": "멘토링 API"
+    },
+    {
+      "name": "Planner",
+      "description": "학습 플래너 API"
+    },
+    {
+      "name": "Auth",
+      "description": "인증 API"
+    }
+  ],
+  "paths": {
+    "/jenkins/jobs/{jobName}": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "특정 Job 정보 조회",
+        "description": "지정한 이름의 Job 정보를 상세 조회합니다.",
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseJobResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Job 업데이트",
+        "description": "기존 Jenkins Job의 설정을 업데이트합니다.",
+        "operationId": "updateJob",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Job 삭제",
+        "description": "지정한 Jenkins Job을 삭제합니다.",
+        "operationId": "deleteJob",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "모든 Job 목록 조회",
+        "description": "Jenkins에 등록된 모든 Job 목록을 조회합니다.",
+        "operationId": "getAllJobs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListJobResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Job 생성",
+        "description": "새로운 Jenkins Job을 생성합니다.",
+        "operationId": "createJob",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs/{jobName}/build": {
+      "post": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Job 빌드 실행",
+        "description": "지정한 Job의 빌드를 실행합니다.",
+        "operationId": "triggerBuild",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseQueueItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/study/todos/{todoId}/submit": {
+      "post": {
+        "tags": [
+          "Study"
+        ],
+        "summary": "과제 제출",
+        "description": "할 일에 대한 과제를 제출합니다. AI Vision 자동 검수가 시작됩니다",
+        "operationId": "submitAssignment",
+        "parameters": [
+          {
+            "name": "todoId",
+            "in": "path",
+            "description": "할 일 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "fileUrl",
+            "in": "query",
+            "description": "제출 파일 URL",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/study/mistake-notes": {
+      "post": {
+        "tags": [
+          "Study"
+        ],
+        "summary": "오답노트 생성",
+        "description": "오답노트를 생성하고 AI 변형 문제 생성을 시작합니다",
+        "operationId": "createMistakeNote",
+        "parameters": [
+          {
+            "name": "todoId",
+            "in": "query",
+            "description": "할 일 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "imageUrl",
+            "in": "query",
+            "description": "오답 이미지 URL",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/special/oral-test/submit": {
+      "post": {
+        "tags": [
+          "Focus & OralTest"
+        ],
+        "summary": "구술 테스트 제출",
+        "description": "구술 테스트 결과를 제출합니다",
+        "operationId": "submitOralTest",
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "query",
+            "description": "테스트 주제",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "audioUrl",
+            "in": "query",
+            "description": "음성 파일 URL",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/special/focus/{sessionId}/end": {
+      "post": {
+        "tags": [
+          "Focus & OralTest"
+        ],
+        "summary": "집중 세션 종료",
+        "description": "집중 세션을 종료하고 집중 점수를 반환합니다",
+        "operationId": "endSession",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "description": "세션 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "drowsiness",
+            "in": "query",
+            "description": "졸음 감지 횟수",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "phoneUse",
+            "in": "query",
+            "description": "폰 사용 감지 횟수",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/special/focus/start": {
+      "post": {
+        "tags": [
+          "Focus & OralTest"
+        ],
+        "summary": "집중 세션 시작",
+        "description": "공부 집중 세션을 시작합니다 (졸음 감지)",
+        "operationId": "startSession",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "플래너 조회",
+        "description": "특정 날짜의 학습 플래너를 조회합니다",
+        "operationId": "getPlanner",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "조회할 날짜 (yyyy-MM-dd)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "플래너 생성",
+        "description": "새로운 학습 플래너를 생성합니다",
+        "operationId": "createPlanner",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlannerCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners/{plannerId}/todos": {
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "할 일 추가",
+        "description": "플래너에 새로운 할 일을 추가합니다",
+        "operationId": "addTodo",
+        "parameters": [
+          {
+            "name": "plannerId",
+            "in": "path",
+            "description": "플래너 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/test/chat": {
+      "post": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "ChatGPT 테스트",
+        "description": "간단한 프롬프트로 ChatGPT를 테스트합니다. 인증이 필요 없으며 DB에 저장되지 않습니다.",
+        "operationId": "testChat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimpleChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSimpleChatResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/dalle/generate": {
+      "post": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "DALL-E 이미지 생성",
+        "description": "DALL-E API를 통해 이미지를 생성합니다. 생성된 이미지 URL과 작업 ID가 반환됩니다.",
+        "operationId": "generateImage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DalleGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDalleGenerateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/chat": {
+      "post": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "ChatGPT 대화 요청",
+        "description": "ChatGPT API를 통해 대화를 생성합니다. 응답과 함께 작업 ID가 반환됩니다.",
+        "operationId": "chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatGPTRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseChatGPTResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/planners/{plannerId}/feedback": {
+      "get": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "피드백 조회",
+        "description": "특정 플래너의 피드백을 조회합니다",
+        "operationId": "getFeedback",
+        "parameters": [
+          {
+            "name": "plannerId",
+            "in": "path",
+            "description": "플래너 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "피드백 작성/수정",
+        "description": "멘토가 피드백을 작성하거나 수정합니다",
+        "operationId": "saveFeedback",
+        "parameters": [
+          {
+            "name": "plannerId",
+            "in": "path",
+            "description": "플래너 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/planners/{plannerId}/feedback/draft": {
+      "post": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "AI 피드백 초안 생성",
+        "description": "멘토가 특정 플래너에 대한 AI 피드백 초안을 생성합니다",
+        "operationId": "generateFeedbackDraft",
+        "parameters": [
+          {
+            "name": "plannerId",
+            "in": "path",
+            "description": "플래너 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/mentees/{menteeId}/todos": {
+      "post": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "멘티에게 할 일 등록",
+        "description": "멘토가 특정 멘티에게 할 일을 등록합니다",
+        "operationId": "addTodoForMentee",
+        "parameters": [
+          {
+            "name": "menteeId",
+            "in": "path",
+            "description": "멘티 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "날짜 (yyyy-MM-dd)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/chat": {
+      "post": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "AI 튜터 채팅",
+        "description": "멘티가 AI 튜터와 채팅합니다",
+        "operationId": "chatWithAi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/email-verification/verify": {
+      "post": {
+        "tags": [
+          "Email Verification"
+        ],
+        "summary": "인증 코드 확인",
+        "description": "발송된 인증 코드를 확인하고 이메일 인증을 완료합니다",
+        "operationId": "verifyCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/email-verification/send": {
+      "post": {
+        "tags": [
+          "Email Verification"
+        ],
+        "summary": "인증 코드 발송",
+        "description": "이메일로 6자리 인증 코드를 발송합니다",
+        "operationId": "sendVerificationCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/email-verification/resend": {
+      "post": {
+        "tags": [
+          "Email Verification"
+        ],
+        "summary": "인증 코드 재발송",
+        "description": "인증 코드를 재발송합니다 (1분 간격 제한)",
+        "operationId": "resendVerificationCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/signup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "회원가입",
+        "description": "새로운 사용자 계정을 생성합니다",
+        "operationId": "signup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "토큰 재발급",
+        "description": "Refresh Token을 사용하여 새로운 Access Token을 발급받습니다",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "로그아웃",
+        "description": "로그아웃하여 Refresh Token을 삭제하고 Access Token을 블랙리스트에 추가합니다",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "로그인",
+        "description": "이메일과 비밀번호로 로그인하여 JWT 토큰을 발급받습니다",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "patch": {
+        "tags": [
+          "User"
+        ],
+        "summary": "내 정보 수정",
+        "description": "비밀번호, 이름 등 내 프로필 정보를 수정합니다",
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners/{plannerId}/comment": {
+      "patch": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "플래너 코멘트 수정",
+        "description": "오늘의 한마디와 기분 이모지를 수정합니다",
+        "operationId": "updateComment",
+        "parameters": [
+          {
+            "name": "plannerId",
+            "in": "path",
+            "description": "플래너 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlannerCommentUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners/todos/{todoId}": {
+      "patch": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "할 일 수정",
+        "description": "할 일의 완료 여부, 공부 시간을 수정합니다",
+        "operationId": "updateTodo",
+        "parameters": [
+          {
+            "name": "todoId",
+            "in": "path",
+            "description": "할 일 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/jenkins/nodes": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "모든 노드 정보 조회",
+        "description": "Jenkins에 등록된 모든 노드(에이전트) 정보를 조회합니다.",
+        "operationId": "getAllNodes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListNodeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs/{jobName}/builds": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Job의 모든 빌드 목록 조회",
+        "description": "지정한 Job의 모든 빌드 목록을 조회합니다.",
+        "operationId": "getAllBuilds",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListBuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs/{jobName}/builds/{buildNumber}": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "특정 빌드 정보 조회",
+        "description": "지정한 Job의 특정 빌드 정보를 조회합니다.",
+        "operationId": "getBuildInfo",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buildNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseBuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs/{jobName}/builds/{buildNumber}/log": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "빌드 로그 조회",
+        "description": "지정한 빌드의 콘솔 로그를 조회합니다.",
+        "operationId": "getBuildLog",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buildNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseBuildLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/jobs/{jobName}/builds/last": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "마지막 빌드 정보 조회",
+        "description": "지정한 Job의 마지막 빌드 정보를 조회합니다.",
+        "operationId": "getLastBuild",
+        "parameters": [
+          {
+            "name": "jobName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseBuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jenkins/health": {
+      "get": {
+        "tags": [
+          "Jenkins Management"
+        ],
+        "summary": "Jenkins 서버 연결 상태 확인",
+        "description": "Jenkins 서버가 정상적으로 연결되어 있는지 확인합니다.",
+        "operationId": "checkHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseBoolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health-service"
+        ],
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ping": {
+      "get": {
+        "tags": [
+          "health-service"
+        ],
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/study/todos/{todoId}/submissions": {
+      "get": {
+        "tags": [
+          "Study"
+        ],
+        "summary": "Todo별 제출 목록 조회",
+        "description": "특정 할 일에 대한 제출 목록을 조회합니다",
+        "operationId": "getSubmissionsByTodo",
+        "parameters": [
+          {
+            "name": "todoId",
+            "in": "path",
+            "description": "할 일 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentSubmissionResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/study/submissions/{submissionId}": {
+      "get": {
+        "tags": [
+          "Study"
+        ],
+        "summary": "제출물 상세 조회",
+        "description": "과제 제출물의 상세 정보와 AI 분석 결과를 조회합니다",
+        "operationId": "getSubmission",
+        "parameters": [
+          {
+            "name": "submissionId",
+            "in": "path",
+            "description": "제출물 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentSubmissionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners/mypage": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "마이페이지 조회",
+        "description": "멘티의 프로필, 성취율, 과목별 완료율을 조회합니다",
+        "operationId": "getMypage",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MypageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planners/calendar": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "캘린더 조회",
+        "description": "기간별 플래너 캘린더를 조회합니다 (일별 완료율 포함)",
+        "operationId": "getCalendar",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "시작일 (yyyy-MM-dd)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "종료일 (yyyy-MM-dd)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarDayResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/dalle/{jobId}": {
+      "get": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "DALL-E 로그 조회",
+        "description": "작업 ID로 DALL-E 이미지 생성 로그를 조회합니다.",
+        "operationId": "getDalleLog",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "description": "작업 ID (UUID)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDalleGenerationLog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/dalle/user/{userId}": {
+      "get": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "사용자별 DALL-E 로그 목록",
+        "description": "특정 사용자의 모든 DALL-E 이미지 생성 로그를 조회합니다.",
+        "operationId": "getDalleLogsByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListDalleGenerationLog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/chat/{jobId}": {
+      "get": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "ChatGPT 로그 조회",
+        "description": "작업 ID로 ChatGPT 대화 로그를 조회합니다.",
+        "operationId": "getChatLog",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "description": "작업 ID (UUID)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseOpenAIChatLog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openai/chat/user/{userId}": {
+      "get": {
+        "tags": [
+          "OpenAI"
+        ],
+        "summary": "사용자별 ChatGPT 로그 목록",
+        "description": "특정 사용자의 모든 ChatGPT 대화 로그를 조회합니다.",
+        "operationId": "getChatLogsByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListOpenAIChatLog"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/mentees": {
+      "get": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "담당 멘티 목록 조회",
+        "description": "멘토가 담당하는 멘티 목록을 조회합니다",
+        "operationId": "getMenteeList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MenteeResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mentoring/mentees/{menteeId}/planners": {
+      "get": {
+        "tags": [
+          "Mentoring"
+        ],
+        "summary": "멘티 플래너 조회",
+        "description": "멘토가 특정 멘티의 특정 날짜 플래너를 조회합니다",
+        "operationId": "getMenteePlanner",
+        "parameters": [
+          {
+            "name": "menteeId",
+            "in": "path",
+            "description": "멘티 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "조회할 날짜 (yyyy-MM-dd)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "대시보드 통계 조회",
+        "description": "전체 사용자 수, 멘토/멘티 수, 학습 세션 등 통계를 조회합니다",
+        "operationId": "getDashboard",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JobCreateRequest": {
+        "required": [
+          "jobName"
+        ],
+        "type": "object",
+        "properties": {
+          "jobName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "gitUrl": {
+            "type": "string"
+          },
+          "gitBranch": {
+            "type": "string"
+          },
+          "buildScript": {
+            "type": "string"
+          },
+          "jobType": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "BuildRequest": {
+        "required": [
+          "jobName"
+        ],
+        "type": "object",
+        "properties": {
+          "jobName": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "waitForCompletion": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseQueueItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QueueItemResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "QueueItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jobName": {
+            "type": "string"
+          },
+          "inQueueSince": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "why": {
+            "type": "string"
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "buildable": {
+            "type": "boolean"
+          },
+          "executableNumber": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PlannerCreateRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "studentComment": {
+            "type": "string"
+          }
+        }
+      },
+      "TodoCreateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "goalDescription": {
+            "type": "string"
+          },
+          "isFixed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SimpleChatRequest": {
+        "required": [
+          "prompt"
+        ],
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "maxLength": 10000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number"
+          },
+          "maxTokens": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseSimpleChatResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SimpleChatResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "SimpleChatResponse": {
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": "string"
+          },
+          "tokensUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promptTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "DalleGenerateRequest": {
+        "required": [
+          "prompt"
+        ],
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "quality": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metadata": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseDalleGenerateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DalleGenerateResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "DalleGenerateResponse": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "revisedPrompt": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "b64Json": {
+            "type": "string"
+          },
+          "copyrightFlag": {
+            "type": "boolean"
+          },
+          "safetyFilterTriggered": {
+            "type": "boolean"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatGPTRequest": {
+        "required": [
+          "userPrompt"
+        ],
+        "type": "object",
+        "properties": {
+          "userPrompt": {
+            "maxLength": 10000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "systemPrompt": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number"
+          },
+          "maxTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metadata": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseChatGPTResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ChatGPTResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatGPTResponse": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "response": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tokensUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promptTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "FeedbackRequest": {
+        "type": "object",
+        "properties": {
+          "koreanSummary": {
+            "type": "string"
+          },
+          "mathSummary": {
+            "type": "string"
+          },
+          "englishSummary": {
+            "type": "string"
+          },
+          "totalReview": {
+            "type": "string"
+          },
+          "adoptAiDraft": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FeedbackResponse": {
+        "type": "object",
+        "properties": {
+          "feedbackId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "plannerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "koreanSummary": {
+            "type": "string"
+          },
+          "mathSummary": {
+            "type": "string"
+          },
+          "englishSummary": {
+            "type": "string"
+          },
+          "totalReview": {
+            "type": "string"
+          },
+          "aiGeneratedDraft": {
+            "type": "string"
+          },
+          "isAiAdopted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "VerifyCodeRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "SendCodeRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "SignupRequest": {
+        "required": [
+          "email",
+          "name",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "intro": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "targetUniversity": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseTokenResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TokenResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh Token",
+            "example": "eyJhbGciOiJIUzI1NiJ9..."
+          }
+        },
+        "description": "Refresh Token 요청"
+      },
+      "LoginRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          },
+          "intro": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "targetUniversity": {
+            "type": "string"
+          }
+        }
+      },
+      "PlannerCommentUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "studentComment": {
+            "type": "string"
+          },
+          "moodEmoji": {
+            "type": "string"
+          }
+        }
+      },
+      "TodoUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "studyTime": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseListNodeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeResponse"
+            }
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "NodeResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "temporarilyOffline": {
+            "type": "boolean"
+          },
+          "numExecutors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idle": {
+            "type": "boolean"
+          },
+          "offlineCauseReason": {
+            "type": "string"
+          },
+          "labelString": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListJobResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobResponse"
+            }
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "BuildResponse": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "url": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string"
+          },
+          "building": {
+            "type": "boolean"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedDuration": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "userId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "JobResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "buildable": {
+            "type": "boolean"
+          },
+          "lastBuildNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastSuccessfulBuildNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastFailedBuildNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "color": {
+            "type": "string"
+          },
+          "inQueue": {
+            "type": "boolean"
+          },
+          "builds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BuildResponse"
+            }
+          }
+        }
+      },
+      "ApiResponseJobResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JobResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListBuildResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BuildResponse"
+            }
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseBuildResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BuildResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseBuildLogResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BuildLogResponse"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "BuildLogResponse": {
+        "type": "object",
+        "properties": {
+          "jobName": {
+            "type": "string"
+          },
+          "buildNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "consoleOutput": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hasMoreData": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseBoolean": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "AssignmentSubmissionResponse": {
+        "type": "object",
+        "properties": {
+          "submissionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "todoId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fileUrl": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "aiAnalysisStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "studyDensityScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aiCheckComment": {
+            "type": "string"
+          }
+        }
+      },
+      "PlannerResponse": {
+        "type": "object",
+        "properties": {
+          "plannerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "studentComment": {
+            "type": "string"
+          },
+          "sentimentScore": {
+            "type": "number",
+            "format": "double"
+          },
+          "moodEmoji": {
+            "type": "string"
+          },
+          "todos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoResponse"
+            }
+          }
+        }
+      },
+      "TodoResponse": {
+        "type": "object",
+        "properties": {
+          "todoId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "goalDescription": {
+            "type": "string"
+          },
+          "studyTime": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdBy": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fixed": {
+            "type": "boolean"
+          },
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MypageResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "targetUniversity": {
+            "type": "string"
+          },
+          "mentorName": {
+            "type": "string"
+          },
+          "totalTodos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedTodos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overallCompletionRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "subjectCompletionRates": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "totalStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CalendarDayResponse": {
+        "type": "object",
+        "properties": {
+          "plannerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "moodEmoji": {
+            "type": "string"
+          },
+          "totalTodos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedTodos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ApiResponseDalleGenerationLog": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DalleGenerationLog"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "DalleGenerationLog": {
+        "type": "object",
+        "properties": {
+          "createDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "model": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "revisedPrompt": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "quality": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "b64Json": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "copyrightFlag": {
+            "type": "boolean"
+          },
+          "safetyFilterTriggered": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "createDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "email": {
+            "type": "string"
+          },
+          "passwordHash": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "ADMIN"
+            ]
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "termsAgreedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileImageUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListDalleGenerationLog": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DalleGenerationLog"
+            }
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseOpenAIChatLog": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OpenAIChatLog"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "OpenAIChatLog": {
+        "type": "object",
+        "properties": {
+          "createDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "model": {
+            "type": "string"
+          },
+          "systemPrompt": {
+            "type": "string"
+          },
+          "userPrompt": {
+            "type": "string"
+          },
+          "assistantResponse": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number"
+          },
+          "maxTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tokensUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promptTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListOpenAIChatLog": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpenAIChatLog"
+            }
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      },
+      "MenteeResponse": {
+        "type": "object",
+        "properties": {
+          "menteeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "targetUniversity": {
+            "type": "string"
+          }
+        }
+      },
+      "AdminDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalMentors": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalMentees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "todayFocusSessions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalAiUsage": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "JWT 토큰을 입력하세요. Bearer 접두사 없이 토큰만 입력하세요.",
+        "name": "Authorization",
+        "in": "header",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
