@@ -9,6 +9,7 @@ public class FeedbackRequest {
     private String koreanSummary;
     private String mathSummary;
     private String englishSummary;
+    private String scienceSummary;
     private String totalReview;
     private Boolean adoptAiDraft;
 }
