@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -100,6 +102,96 @@ public class PlannerService {
                 mentor.getUser().getId()
         );
         return todoRepository.save(todo).getId();
+    }
+
+    /** 할일 일괄 생성: 한 플래너에 여러 할일을 한 번에 등록 */
+    @Transactional
+    public List<Long> addTodoBatch(Long userId, Long plannerId, TodoBatchCreateRequest request) {
+        Planner planner = plannerRepository.findById(plannerId)
+                .orElseThrow(() -> new IllegalArgumentException("Planner not found"));
+        List<Long> ids = new ArrayList<>();
+        for (TodoCreateRequest item : request.getItems()) {
+            Todo todo = new Todo(
+                    planner,
+                    item.getTitle(),
+                    item.getSubject(),
+                    item.getGoalDescription(),
+                    item.getIsFixed() != null ? item.getIsFixed() : false,
+                    userId
+            );
+            ids.add(todoRepository.save(todo).getId());
+        }
+        return ids;
+    }
+
+    /** 멘토가 멘티의 특정 날짜에 할일 일괄 등록 */
+    @Transactional
+    public List<Long> addTodoBatchForMentee(Long mentorUserId, Long menteeId, LocalDate date, TodoBatchCreateRequest request) {
+        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Mentee mentee = menteeRepository.findById(menteeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
+                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+        List<Long> ids = new ArrayList<>();
+        for (TodoCreateRequest item : request.getItems()) {
+            Todo todo = new Todo(
+                    planner,
+                    item.getTitle(),
+                    item.getSubject(),
+                    item.getGoalDescription(),
+                    true,
+                    mentor.getUser().getId()
+            );
+            ids.add(todoRepository.save(todo).getId());
+        }
+        return ids;
+    }
+
+    /** 요일 선택 시 해당 월 전체 주차에 동일 할일 반복 등록 (멘토 → 멘티) */
+    @Transactional
+    public List<Long> addTodosForMonthByWeekdays(Long mentorUserId, Long menteeId, TodoRepeatByWeekdaysRequest request) {
+        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Mentee mentee = menteeRepository.findById(menteeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        YearMonth ym = YearMonth.parse(request.getYearMonth());
+        Set<DayOfWeek> dayOfWeeks = request.getWeekdays().stream()
+                .map(String::toUpperCase)
+                .map(DayOfWeek::valueOf)
+                .collect(Collectors.toSet());
+
+        List<Long> ids = new ArrayList<>();
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            if (!dayOfWeeks.contains(d.getDayOfWeek())) {
+                continue;
+            }
+            final LocalDate date = d;
+            Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
+                    .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+            TodoCreateRequest t = request.getTodoTemplate();
+            Todo todo = new Todo(
+                    planner,
+                    t.getTitle(),
+                    t.getSubject(),
+                    t.getGoalDescription(),
+                    true,
+                    mentor.getUser().getId()
+            );
+            ids.add(todoRepository.save(todo).getId());
+        }
+        return ids;
+    }
+
+    /** 할일 일괄 수정 */
+    @Transactional
+    public void updateTodoBatch(Long userId, TodoBatchUpdateRequest request) {
+        for (TodoBatchUpdateRequest.TodoBatchUpdateItem item : request.getItems()) {
+            updateTodo(userId, item.getTodoId(), item.getPatch());
+        }
     }
 
     // Todo 업데이트 (완료 여부, 공부 시간)
