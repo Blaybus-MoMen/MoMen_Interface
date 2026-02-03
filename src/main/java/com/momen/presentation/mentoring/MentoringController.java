@@ -80,6 +80,15 @@ public class MentoringController {
         return ResponseEntity.ok(feedbackService.saveFeedback(userId, plannerId, request));
     }
 
+    @Operation(summary = "주차별 피드백 AI 요약", description = "해당 월의 멘토 피드백을 주차별·항목별(국어/수학/영어/총평)로 AI 요약합니다")
+    @GetMapping("/mentees/{menteeId}/feedback/weekly-summary")
+    public ResponseEntity<MonthlyFeedbackSummaryResponse> getWeeklyFeedbackSummary(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
+        return ResponseEntity.ok(feedbackService.generateWeeklySummaries(userId, menteeId, yearMonth));
+    }
+
     @Operation(summary = "AI 튜터 채팅", description = "멘티가 AI 튜터와 채팅합니다")
     @PostMapping("/chat")
     public ResponseEntity<String> chatWithAi(
