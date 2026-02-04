@@ -15,10 +15,10 @@ public class TodoResponse {
     private boolean isCompleted;
     private boolean isFixed;
     private Long createdBy;
-    private String dayOfWeek;
     private String worksheetFileUrl;
     private Boolean mentorConfirmed;
-    private Long parentTodoId;
+    private String repeatGroupId;
+    private String repeatDays;
 
     public static TodoResponse from(Todo todo) {
         return TodoResponse.builder()
@@ -30,10 +30,10 @@ public class TodoResponse {
                 .isCompleted(todo.getIsCompleted())
                 .isFixed(todo.getIsFixed())
                 .createdBy(todo.getCreatedBy())
-                .dayOfWeek(todo.getDayOfWeek())
                 .worksheetFileUrl(todo.getWorksheetFileUrl())
                 .mentorConfirmed(todo.getMentorConfirmed())
-                .parentTodoId(todo.getParentTodo() != null ? todo.getParentTodo().getId() : null)
+                .repeatGroupId(todo.getRepeatGroupId())
+                .repeatDays(todo.getRepeatDays())
                 .build();
     }
 }
