@@ -71,15 +71,6 @@ public class PlannerController {
         return ResponseEntity.ok(TodoBatchCreateResponse.builder().todoIds(ids).count(ids.size()).build());
     }
 
-    @Operation(summary = "요일 반복 할 일 생성 (멘토)", description = "선택한 요일에 해당 월 전체 주차에 동일 할 일을 반복 등록합니다")
-    @PostMapping("/mentees/{menteeId}/todos/repeat-by-weekdays")
-    public ResponseEntity<TodoBatchCreateResponse> addTodosForMonthByWeekdays(@RequestAttribute("userId") Long userId,
-                                                                               @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-                                                                               @Valid @RequestBody TodoRepeatByWeekdaysRequest request) {
-        List<Long> ids = plannerService.addTodosForMonthByWeekdays(userId, menteeId, request);
-        return ResponseEntity.ok(TodoBatchCreateResponse.builder().todoIds(ids).count(ids.size()).build());
-    }
-
     @Operation(summary = "할 일 수정", description = "할 일의 완료 여부, 공부 시간을 수정합니다")
     @PatchMapping("/todos/{todoId}")
     public ResponseEntity<Void> updateTodo(@RequestAttribute("userId") Long userId,
