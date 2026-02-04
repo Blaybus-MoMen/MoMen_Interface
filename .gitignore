@@ -38,5 +38,6 @@ out/
 
 .claude
 /wj
+/uploads
 .env
 logs

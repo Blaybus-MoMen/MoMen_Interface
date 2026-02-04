@@ -21,11 +21,11 @@ public class FileStorageService {
 
     @PostConstruct
     public void init() {
-        uploadPath = Paths.get(uploadDir);
+        uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(uploadPath);
         } catch (IOException e) {
-            throw new RuntimeException("업로드 디렉토리를 생성할 수 없습니다: " + uploadDir, e);
+            throw new RuntimeException("업로드 디렉토리를 생성할 수 없습니다: " + uploadPath, e);
         }
     }
 
@@ -44,9 +44,9 @@ public class FileStorageService {
 
         try {
             Path targetPath = uploadPath.resolve(storedFilename);
-            file.transferTo(targetPath.toFile());
+            Files.copy(file.getInputStream(), targetPath);
         } catch (IOException e) {
-            throw new RuntimeException("파일 저장에 실패했습니다", e);
+            throw new RuntimeException("파일 저장에 실패했습니다: " + e.getMessage(), e);
         }
 
         return "/files/" + storedFilename;
