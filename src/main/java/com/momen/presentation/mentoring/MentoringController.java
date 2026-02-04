@@ -38,8 +38,8 @@ public class MentoringController {
         return ResponseEntity.ok(mentoringService.getMenteeList(userId));
     }
 
-    @Operation(summary = "멘티 플래너 조회", description = "멘토가 특정 멘티의 특정 날짜 플래너를 조회합니다")
-    @GetMapping("/mentees/{menteeId}/planners")
+    @Operation(summary = "멘티 일별 플래너 조회", description = "멘토가 특정 멘티의 특정 날짜 플래너를 조회합니다")
+    @GetMapping(value = "/mentees/{menteeId}/planners", params = "date")
     public ResponseEntity<PlannerResponse> getMenteePlanner(
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
@@ -47,8 +47,8 @@ public class MentoringController {
         return ResponseEntity.ok(plannerService.getPlannerForMentee(userId, menteeId, date));
     }
 
-    @Operation(summary = "멘티 월별 캘린더 조회", description = "멘토가 특정 멘티의 월별 할일을 날짜별로 조회합니다")
-    @GetMapping("/mentees/{menteeId}/calendar")
+    @Operation(summary = "멘티 월별 플래너 조회", description = "멘토가 특정 멘티의 월별 할일을 날짜별로 조회합니다")
+    @GetMapping(value = "/mentees/{menteeId}/planners", params = "yearMonth")
     public ResponseEntity<MenteeCalendarResponse> getMenteeCalendar(
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
