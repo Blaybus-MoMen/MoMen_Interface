@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/api/v1/email-verification/**",
                                 "/api/v1/openai/**",
                                 "/api/v1/veo/**",
+                                "/api/v1/files/**",
                                 "/public/**",
                                 "/api/v1/swagger-ui.html",
                                 "/api/v1/swagger-ui/**",
