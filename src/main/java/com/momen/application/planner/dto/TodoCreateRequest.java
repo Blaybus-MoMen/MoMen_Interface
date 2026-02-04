@@ -10,6 +10,5 @@ public class TodoCreateRequest {
     private String subject; // KOREAN, MATH, ENGLISH
     private String goalDescription;
     private Boolean isFixed;
-    private String dayOfWeek;
     private String worksheetFileUrl;
 }
