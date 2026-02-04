@@ -60,7 +60,7 @@ public class User extends BaseTimeEntity {
         this.passwordHash = passwordHash;
         this.name = name;
         this.phone = phone;
-        this.role = role != null ? role : UserRole.STUDENT;
+        this.role = role != null ? role : UserRole.MENTEE;
         this.isActive = true;
         this.emailVerified = false;
     }
