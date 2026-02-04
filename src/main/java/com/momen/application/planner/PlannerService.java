@@ -78,7 +78,6 @@ public class PlannerService {
                 request.getGoalDescription(),
                 request.getIsFixed(),
                 userId,
-                request.getDayOfWeek(),
                 request.getWorksheetFileUrl()
         );
         return todoRepository.save(todo).getId();
@@ -92,17 +91,15 @@ public class PlannerService {
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
-                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+        Planner planner = getOrCreatePlanner(mentee, date);
 
         Todo todo = new Todo(
                 planner,
                 request.getTitle(),
                 request.getSubject(),
                 request.getGoalDescription(),
-                true, // isFixed = true (멘토 지정)
+                true,
                 mentor.getUser().getId(),
-                request.getDayOfWeek(),
                 request.getWorksheetFileUrl()
         );
         return todoRepository.save(todo).getId();
@@ -122,7 +119,6 @@ public class PlannerService {
                     item.getGoalDescription(),
                     item.getIsFixed() != null ? item.getIsFixed() : false,
                     userId,
-                    item.getDayOfWeek(),
                     item.getWorksheetFileUrl()
             );
             ids.add(todoRepository.save(todo).getId());
@@ -137,8 +133,7 @@ public class PlannerService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
-        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
-                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+        Planner planner = getOrCreatePlanner(mentee, date);
         List<Long> ids = new ArrayList<>();
         for (TodoCreateRequest item : request.getItems()) {
             Todo todo = new Todo(
@@ -148,48 +143,7 @@ public class PlannerService {
                     item.getGoalDescription(),
                     true,
                     mentor.getUser().getId(),
-                    item.getDayOfWeek(),
                     item.getWorksheetFileUrl()
-            );
-            ids.add(todoRepository.save(todo).getId());
-        }
-        return ids;
-    }
-
-    // 요일 선택 시 해당 월 전체 주차에 동일 할일 반복 등록
-    @Transactional
-    public List<Long> addTodosForMonthByWeekdays(Long mentorUserId, Long menteeId, TodoRepeatByWeekdaysRequest request) {
-        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
-        Mentee mentee = menteeRepository.findById(menteeId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
-
-        YearMonth ym = YearMonth.parse(request.getYearMonth());
-        Set<DayOfWeek> dayOfWeeks = request.getWeekdays().stream()
-                .map(String::toUpperCase)
-                .map(DayOfWeek::valueOf)
-                .collect(Collectors.toSet());
-
-        List<Long> ids = new ArrayList<>();
-        LocalDate start = ym.atDay(1);
-        LocalDate end = ym.atEndOfMonth();
-        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-            if (!dayOfWeeks.contains(d.getDayOfWeek())) {
-                continue;
-            }
-            final LocalDate date = d;
-            Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
-                    .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
-            TodoCreateRequest t = request.getTodoTemplate();
-            Todo todo = new Todo(
-                    planner,
-                    t.getTitle(),
-                    t.getSubject(),
-                    t.getGoalDescription(),
-                    true,
-                    mentor.getUser().getId(),
-                    t.getDayOfWeek(),
-                    t.getWorksheetFileUrl()
             );
             ids.add(todoRepository.save(todo).getId());
         }
@@ -243,7 +197,38 @@ public class PlannerService {
         }).collect(Collectors.toList());
     }
 
-    // 멘토가 멘티의 특정 날짜 할일을 Full Sync (추가/수정/삭제 한번에 처리)
+    // 멘토가 멘티의 월별 캘린더 조회 (date별 todo 묶음)
+    public MenteeCalendarResponse getCalendarForMentee(Long mentorUserId, Long menteeId, String yearMonth) {
+        mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+
+        List<Planner> planners = plannerRepository.findByMenteeIdAndPlannerDateBetween(menteeId, start, end);
+
+        List<MenteeCalendarResponse.DayEntry> days = planners.stream()
+                .map(planner -> {
+                    List<TodoResponse> todos = todoRepository.findByPlannerId(planner.getId()).stream()
+                            .map(TodoResponse::from)
+                            .collect(Collectors.toList());
+                    return MenteeCalendarResponse.DayEntry.builder()
+                            .date(planner.getPlannerDate())
+                            .plannerId(planner.getId())
+                            .todos(todos)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return MenteeCalendarResponse.builder()
+                .yearMonth(yearMonth)
+                .menteeId(menteeId)
+                .days(days)
+                .build();
+    }
+
+    // 멘토가 멘티의 할일을 Full Sync (추가/수정/삭제 한번에 처리)
     @Transactional
     public TodoSyncResponse syncTodosForMentee(Long mentorUserId, Long menteeId, TodoSyncRequest request) {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
@@ -251,17 +236,16 @@ public class PlannerService {
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        LocalDate date = request.getDate();
-        Planner planner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
-                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
+        LocalDate syncDate = request.getSyncDate();
+        Planner syncPlanner = getOrCreatePlanner(mentee, syncDate);
 
-        List<Todo> existingTodos = todoRepository.findByPlannerId(planner.getId());
+        // DELETE: syncDate 기준 기존 todo 중 요청 목록에 없는 것 삭제
+        List<Todo> existingTodos = todoRepository.findByPlannerId(syncPlanner.getId());
         Set<Long> incomingIds = request.getTodos().stream()
                 .map(TodoSyncRequest.TodoSyncItem::getTodoId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // DELETE: 기존 todo 중 요청 목록에 없는 것 삭제
         List<Todo> toDelete = existingTodos.stream()
                 .filter(t -> !incomingIds.contains(t.getId()))
                 .collect(Collectors.toList());
@@ -275,43 +259,56 @@ public class PlannerService {
         for (TodoSyncRequest.TodoSyncItem item : request.getTodos()) {
             if (item.getTodoId() == null) {
                 // CREATE
-                Todo newTodo = new Todo(
-                        planner,
-                        item.getTitle(),
-                        item.getSubject(),
-                        item.getGoalDescription(),
-                        true,
-                        mentor.getUser().getId(),
-                        item.getDayOfWeek(),
-                        item.getWorksheetFileUrl()
-                );
-                if (item.getMentorConfirmed() != null) {
-                    newTodo.updateContent(item.getTitle(), item.getSubject(), item.getGoalDescription(),
-                            item.getDayOfWeek(), item.getWorksheetFileUrl(), item.getMentorConfirmed());
+                if (item.getRepeatDays() != null && !item.getRepeatDays().isBlank()) {
+                    // 반복 생성: 오늘 ~ 월말
+                    List<Todo> repeated = createRecurringTodos(mentee, mentor, item);
+                    resultTodos.addAll(repeated);
+                    createdCount += repeated.size();
+                } else {
+                    // 단건 생성
+                    LocalDate todoDate = item.getDate() != null ? item.getDate() : syncDate;
+                    Planner planner = getOrCreatePlanner(mentee, todoDate);
+                    Todo newTodo = new Todo(
+                            planner,
+                            item.getTitle(),
+                            item.getSubject(),
+                            item.getGoalDescription(),
+                            true,
+                            mentor.getUser().getId(),
+                            item.getWorksheetFileUrl()
+                    );
+                    if (Boolean.TRUE.equals(item.getMentorConfirmed())) {
+                        newTodo.updateContent(item.getTitle(), item.getSubject(),
+                                item.getGoalDescription(), item.getWorksheetFileUrl(), true);
+                    }
+                    newTodo = todoRepository.save(newTodo);
+                    resultTodos.add(newTodo);
+                    createdCount++;
                 }
-                newTodo = todoRepository.save(newTodo);
-
-                // dayOfWeek 있으면 반복 sibling 생성
-                if (item.getDayOfWeek() != null && !item.getDayOfWeek().isBlank()) {
-                    createRecurringSiblings(newTodo, mentee, date, mentor.getUser().getId());
-                }
-
-                resultTodos.add(newTodo);
-                createdCount++;
             } else {
                 // UPDATE
                 Todo existing = todoRepository.findById(item.getTodoId())
                         .orElseThrow(() -> new IllegalArgumentException("Todo not found: " + item.getTodoId()));
 
-                String oldDayOfWeek = existing.getDayOfWeek();
-                existing.updateContent(item.getTitle(), item.getSubject(), item.getGoalDescription(),
-                        item.getDayOfWeek(), item.getWorksheetFileUrl(),
-                        item.getMentorConfirmed() != null ? item.getMentorConfirmed() : false);
-
-                // dayOfWeek 변경 시 그룹 연동 수정
-                if (item.getDayOfWeek() != null && !item.getDayOfWeek().equals(oldDayOfWeek)) {
-                    handleDayOfWeekChange(existing, mentee, item.getDayOfWeek());
+                // 변경 감지 → 반복그룹 분리
+                boolean changed = hasContentChanged(existing, item);
+                if (changed && existing.getRepeatGroupId() != null) {
+                    existing.detachFromRepeatGroup();
                 }
+
+                // 날짜 변경 시 planner 이동
+                if (item.getDate() != null && !item.getDate().equals(existing.getPlanner().getPlannerDate())) {
+                    Planner newPlanner = getOrCreatePlanner(mentee, item.getDate());
+                    existing.reassignPlanner(newPlanner);
+                }
+
+                existing.updateContent(
+                        item.getTitle(),
+                        item.getSubject(),
+                        item.getGoalDescription(),
+                        item.getWorksheetFileUrl(),
+                        item.getMentorConfirmed() != null ? item.getMentorConfirmed() : false
+                );
 
                 resultTodos.add(existing);
                 updatedCount++;
@@ -323,7 +320,7 @@ public class PlannerService {
                 .collect(Collectors.toList());
 
         return TodoSyncResponse.builder()
-                .plannerId(planner.getId())
+                .plannerId(syncPlanner.getId())
                 .created(createdCount)
                 .updated(updatedCount)
                 .deleted(deletedCount)
@@ -331,57 +328,52 @@ public class PlannerService {
                 .build();
     }
 
-    // 해당 월의 같은 요일 날짜에 동일 todo 복제 (parentTodo 설정)
-    private void createRecurringSiblings(Todo parentTodo, Mentee mentee, LocalDate originalDate, Long creatorUserId) {
-        DayOfWeek dow = DayOfWeek.valueOf(parentTodo.getDayOfWeek().toUpperCase());
-        YearMonth ym = YearMonth.from(originalDate);
-        LocalDate start = ym.atDay(1);
-        LocalDate end = ym.atEndOfMonth();
+    // 반복 일정 생성: 오늘 ~ 월말의 해당 요일에 todo 생성
+    private List<Todo> createRecurringTodos(Mentee mentee, Mentor mentor, TodoSyncRequest.TodoSyncItem item) {
+        String repeatDays = item.getRepeatDays();
+        Set<DayOfWeek> dayOfWeeks = Arrays.stream(repeatDays.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(DayOfWeek::valueOf)
+                .collect(Collectors.toSet());
 
-        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-            if (d.getDayOfWeek() != dow || d.equals(originalDate)) {
+        String groupId = UUID.randomUUID().toString();
+        LocalDate today = LocalDate.now();
+        LocalDate end = YearMonth.from(today).atEndOfMonth();
+
+        List<Todo> created = new ArrayList<>();
+        for (LocalDate d = today; !d.isAfter(end); d = d.plusDays(1)) {
+            if (!dayOfWeeks.contains(d.getDayOfWeek())) {
                 continue;
             }
-            final LocalDate siblingDate = d;
-            Planner siblingPlanner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), siblingDate)
-                    .orElseGet(() -> plannerRepository.save(new Planner(mentee, siblingDate)));
-
-            Todo sibling = new Todo(
-                    siblingPlanner,
-                    parentTodo.getTitle(),
-                    parentTodo.getSubject(),
-                    parentTodo.getGoalDescription(),
-                    parentTodo.getIsFixed(),
-                    creatorUserId,
-                    parentTodo.getDayOfWeek(),
-                    parentTodo.getWorksheetFileUrl()
+            Planner planner = getOrCreatePlanner(mentee, d);
+            Todo todo = new Todo(
+                    planner,
+                    item.getTitle(),
+                    item.getSubject(),
+                    item.getGoalDescription(),
+                    true,
+                    mentor.getUser().getId(),
+                    item.getWorksheetFileUrl()
             );
-            sibling.setParentTodo(parentTodo);
-            todoRepository.save(sibling);
+            todo.assignRepeatGroup(groupId, repeatDays);
+            created.add(todoRepository.save(todo));
         }
+        return created;
     }
 
-    // 요일 변경 시 반복 그룹 전체를 새 요일 날짜의 planner로 이동
-    private void handleDayOfWeekChange(Todo changedTodo, Mentee mentee, String newDayOfWeek) {
-        Long groupParentId = changedTodo.getParentTodo() != null
-                ? changedTodo.getParentTodo().getId()
-                : changedTodo.getId();
+    // 내용 변경 여부 확인
+    private boolean hasContentChanged(Todo existing, TodoSyncRequest.TodoSyncItem item) {
+        return !Objects.equals(existing.getTitle(), item.getTitle())
+                || !Objects.equals(existing.getSubject(), item.getSubject())
+                || !Objects.equals(existing.getGoalDescription(), item.getGoalDescription())
+                || !Objects.equals(existing.getWorksheetFileUrl(), item.getWorksheetFileUrl())
+                || (item.getDate() != null && !item.getDate().equals(existing.getPlanner().getPlannerDate()));
+    }
 
-        List<Todo> group = todoRepository.findRecurringGroup(groupParentId);
-        DayOfWeek newDow = DayOfWeek.valueOf(newDayOfWeek.toUpperCase());
-
-        for (Todo sibling : group) {
-            LocalDate currentDate = sibling.getPlanner().getPlannerDate();
-            // 같은 주(week)에서 새 요일로 이동
-            int dayDiff = newDow.getValue() - currentDate.getDayOfWeek().getValue();
-            LocalDate newDate = currentDate.plusDays(dayDiff);
-
-            Planner newPlanner = plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), newDate)
-                    .orElseGet(() -> plannerRepository.save(new Planner(mentee, newDate)));
-            sibling.reassignPlanner(newPlanner);
-            sibling.updateContent(sibling.getTitle(), sibling.getSubject(), sibling.getGoalDescription(),
-                    newDayOfWeek, sibling.getWorksheetFileUrl(), sibling.getMentorConfirmed());
-        }
+    private Planner getOrCreatePlanner(Mentee mentee, LocalDate date) {
+        return plannerRepository.findByMenteeIdAndPlannerDate(mentee.getId(), date)
+                .orElseGet(() -> plannerRepository.save(new Planner(mentee, date)));
     }
 
     // 마이페이지 (성취율 등)
