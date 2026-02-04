@@ -47,6 +47,15 @@ public class MentoringController {
         return ResponseEntity.ok(plannerService.getPlannerForMentee(userId, menteeId, date));
     }
 
+    @Operation(summary = "멘티 월별 캘린더 조회", description = "멘토가 특정 멘티의 월별 할일을 날짜별로 조회합니다")
+    @GetMapping("/mentees/{menteeId}/calendar")
+    public ResponseEntity<MenteeCalendarResponse> getMenteeCalendar(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
+        return ResponseEntity.ok(plannerService.getCalendarForMentee(userId, menteeId, yearMonth));
+    }
+
     @Operation(summary = "멘티에게 할 일 등록", description = "멘토가 특정 멘티에게 할 일을 등록합니다")
     @PostMapping("/mentees/{menteeId}/todos")
     public ResponseEntity<Long> addTodoForMentee(
