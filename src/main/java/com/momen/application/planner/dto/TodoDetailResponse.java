@@ -19,12 +19,8 @@ public class TodoDetailResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private String repeatDays;
-    private String repeatGroupId;
     private Boolean mentorConfirmed;
     private Boolean isCompleted;
-    private Integer studyTime;
-    private Long createdBy;
-    private String mentorFeedback;
     private List<MaterialInfo> materials;
 
     @Getter
@@ -52,12 +48,8 @@ public class TodoDetailResponse {
                 .startDate(todo.getStartDate())
                 .endDate(todo.getEndDate())
                 .repeatDays(todo.getRepeatDays())
-                .repeatGroupId(todo.getRepeatGroupId())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .isCompleted(todo.getIsCompleted())
-                .studyTime(todo.getStudyTime())
-                .createdBy(todo.getCreatedBy())
-                .mentorFeedback(todo.getMentorFeedback())
                 .materials(materials.stream()
                         .map(MaterialInfo::from)
                         .collect(Collectors.toList()))
