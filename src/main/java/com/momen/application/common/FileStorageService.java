@@ -49,7 +49,7 @@ public class FileStorageService {
             throw new RuntimeException("파일 저장에 실패했습니다: " + e.getMessage(), e);
         }
 
-        return "/files/" + storedFilename;
+        return "/api/v1/files/" + storedFilename;
     }
 
     public Path getFilePath(String filename) {

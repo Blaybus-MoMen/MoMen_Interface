@@ -1,9 +1,12 @@
 package com.momen.application.planner;
 
 import com.momen.application.planner.dto.AssignmentSubmissionResponse;
+import com.momen.application.planner.dto.SubmissionRequest;
+import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.planner.AssignmentSubmission;
 import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.external.ai.AiClient;
+import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.planner.AssignmentSubmissionRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,17 +23,26 @@ public class AssignmentService {
 
     private final AssignmentSubmissionRepository submissionRepository;
     private final TodoRepository todoRepository;
+    private final MenteeRepository menteeRepository;
     private final AiClient aiClient;
 
+    // 멘티 과제 제출
     @Transactional
-    public Long submitAssignment(Long userId, Long todoId, String fileUrl) {
+    public Long submitAssignment(Long userId, Long todoId, SubmissionRequest request) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
-        AssignmentSubmission submission = new AssignmentSubmission(todo, fileUrl);
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+
+        AssignmentSubmission submission = new AssignmentSubmission(todo, request.getFileUrl(), request.getFileName());
         submissionRepository.save(submission);
 
-        analyzeSubmissionAsync(submission.getId(), fileUrl);
+        analyzeSubmissionAsync(submission.getId(), request.getFileUrl());
         return submission.getId();
     }
 
@@ -42,6 +54,7 @@ public class AssignmentService {
         return AssignmentSubmissionResponse.from(submission);
     }
 
+    // Todo별 제출 목록 조회
     @Transactional(readOnly = true)
     public List<AssignmentSubmissionResponse> getSubmissionsByTodo(Long todoId) {
         return submissionRepository.findByTodoId(todoId).stream()

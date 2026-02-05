@@ -9,13 +9,11 @@ import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.planner.Feedback;
 import com.momen.domain.planner.FeedbackType;
-import com.momen.domain.planner.Planner;
 import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.external.ai.AiClient;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.FeedbackRepository;
-import com.momen.infrastructure.jpa.planner.PlannerRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,7 +33,6 @@ import java.util.stream.Collectors;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
-    private final PlannerRepository plannerRepository;
     private final MentorRepository mentorRepository;
     private final MenteeRepository menteeRepository;
     private final TodoRepository todoRepository;
@@ -54,12 +51,9 @@ public class FeedbackService {
                 .findByMenteeIdAndFeedbackTypeAndStartDate(menteeId, feedbackType, startDate)
                 .orElseGet(() -> new Feedback(mentee, mentor, feedbackType, startDate, endDate));
 
-        List<Planner> planners = plannerRepository.findByMenteeIdAndPlannerDateBetween(menteeId, startDate, endDate);
-        List<Todo> todos = planners.isEmpty()
-                ? List.of()
-                : todoRepository.findByPlannerIdIn(planners.stream().map(Planner::getId).toList());
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, startDate, endDate);
 
-        String prompt = buildPrompt(feedbackType, startDate, endDate, planners, todos);
+        String prompt = buildPrompt(feedbackType, startDate, endDate, todos);
         String aiDraft = aiClient.generateText(prompt);
 
         feedback.saveAiDraft(aiDraft);
@@ -197,8 +191,7 @@ public class FeedbackService {
                 .build();
     }
 
-    private String buildPrompt(FeedbackType feedbackType, LocalDate startDate, LocalDate endDate,
-                               List<Planner> planners, List<Todo> todos) {
+    private String buildPrompt(FeedbackType feedbackType, LocalDate startDate, LocalDate endDate, List<Todo> todos) {
         // 과목별 통계 집계
         Map<String, Long> totalBySubject = todos.stream()
                 .collect(Collectors.groupingBy(Todo::getSubject, Collectors.counting()));
@@ -206,32 +199,19 @@ public class FeedbackService {
                 .filter(t -> Boolean.TRUE.equals(t.getIsCompleted()))
                 .collect(Collectors.groupingBy(Todo::getSubject, Collectors.counting()));
 
-        // 학생 코멘트 집계
-        List<String> studentComments = planners.stream()
-                .filter(p -> p.getStudentComment() != null && !p.getStudentComment().isBlank())
-                .map(p -> p.getPlannerDate() + ": " + p.getStudentComment())
-                .toList();
-
         String periodLabel = feedbackType == FeedbackType.WEEKLY ? "주간" : "월간";
 
         StringBuilder sb = new StringBuilder();
         sb.append("Role: You are a warm and encouraging study mentor.\n");
         sb.append("Task: Write a ").append(periodLabel).append(" feedback for a student.\n");
         sb.append("Period: ").append(startDate).append(" ~ ").append(endDate).append("\n");
-        sb.append("Total planners: ").append(planners.size()).append(" days\n\n");
+        sb.append("Total todos: ").append(todos.size()).append("\n\n");
 
         sb.append("=== Subject Statistics ===\n");
         for (String subject : totalBySubject.keySet()) {
             long total = totalBySubject.get(subject);
             long completed = completedBySubject.getOrDefault(subject, 0L);
             sb.append(subject).append(": ").append(completed).append("/").append(total).append(" completed\n");
-        }
-
-        if (!studentComments.isEmpty()) {
-            sb.append("\n=== Student Comments ===\n");
-            for (String comment : studentComments) {
-                sb.append(comment).append("\n");
-            }
         }
 
         sb.append("\nPlease write a ").append(periodLabel)

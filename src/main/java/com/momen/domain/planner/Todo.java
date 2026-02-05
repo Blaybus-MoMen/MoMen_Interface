@@ -1,10 +1,13 @@
 package com.momen.domain.planner;
 
 import com.momen.core.entity.BaseTimeEntity;
+import com.momen.domain.mentoring.Mentee;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -18,8 +21,8 @@ public class Todo extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "planner_id", nullable = false)
-    private Planner planner;
+    @JoinColumn(name = "mentee_id", nullable = false)
+    private Mentee mentee;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -30,23 +33,23 @@ public class Todo extends BaseTimeEntity {
     @Column(name = "goal_description", columnDefinition = "TEXT")
     private String goalDescription;
 
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
+
     @Column(name = "study_time")
     private Integer studyTime; // 공부 시간 (분)
 
     @Column(name = "is_completed")
     private Boolean isCompleted = false;
 
-    @Column(name = "is_fixed")
-    private Boolean isFixed = false; // 멘토가 지정한 과제 여부
-
     @Column(name = "created_by", nullable = false)
-    private Long createdBy; // 작성자 ID
-
-    @Column(name = "worksheet_file_url", length = 500)
-    private String worksheetFileUrl; // 학습지파일 URL, nullable
+    private Long createdBy; // 작성자 ID (멘토 userId)
 
     @Column(name = "mentor_confirmed")
-    private Boolean mentorConfirmed = false; // 멘토확인여부
+    private Boolean mentorConfirmed = false; // 멘토 확인 여부
 
     @Column(name = "repeat_group_id", length = 36)
     private String repeatGroupId; // 반복 그룹 UUID, nullable
@@ -54,15 +57,18 @@ public class Todo extends BaseTimeEntity {
     @Column(name = "repeat_days", length = 100)
     private String repeatDays; // "MONDAY,WEDNESDAY", nullable
 
-    public Todo(Planner planner, String title, String subject, String goalDescription,
-                Boolean isFixed, Long createdBy, String worksheetFileUrl) {
-        this.planner = planner;
+    @Column(name = "mentor_feedback", columnDefinition = "TEXT")
+    private String mentorFeedback; // 멘토 피드백
+
+    public Todo(Mentee mentee, String title, String subject, String goalDescription,
+                LocalDate startDate, LocalDate endDate, Long createdBy) {
+        this.mentee = mentee;
         this.title = title;
         this.subject = subject;
         this.goalDescription = goalDescription;
-        this.isFixed = isFixed;
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.createdBy = createdBy;
-        this.worksheetFileUrl = worksheetFileUrl;
     }
 
     public void complete() {
@@ -78,16 +84,16 @@ public class Todo extends BaseTimeEntity {
     }
 
     public void updateContent(String title, String subject, String goalDescription,
-                              String worksheetFileUrl, Boolean mentorConfirmed) {
+                              LocalDate startDate, LocalDate endDate) {
         this.title = title;
         this.subject = subject;
         this.goalDescription = goalDescription;
-        this.worksheetFileUrl = worksheetFileUrl;
-        this.mentorConfirmed = mentorConfirmed;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
-    public void reassignPlanner(Planner newPlanner) {
-        this.planner = newPlanner;
+    public void setMentorConfirmed(boolean confirmed) {
+        this.mentorConfirmed = confirmed;
     }
 
     public void assignRepeatGroup(String repeatGroupId, String repeatDays) {
@@ -98,5 +104,9 @@ public class Todo extends BaseTimeEntity {
     public void detachFromRepeatGroup() {
         this.repeatGroupId = null;
         this.repeatDays = null;
+    }
+
+    public void writeFeedback(String feedback) {
+        this.mentorFeedback = feedback;
     }
 }

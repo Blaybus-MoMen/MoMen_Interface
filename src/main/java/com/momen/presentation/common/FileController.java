@@ -1,6 +1,7 @@
 package com.momen.presentation.common;
 
 import com.momen.application.common.FileStorageService;
+import com.momen.core.dto.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -29,9 +29,9 @@ public class FileController {
     @Operation(summary = "파일 업로드", description = "파일을 업로드하고 접근 URL을 반환합니다")
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, String>> uploadFile(@RequestPart("file") MultipartFile file) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadFile(@RequestPart("file") MultipartFile file) {
         String fileUrl = fileStorageService.store(file);
-        return ResponseEntity.ok(Map.of("fileUrl", fileUrl));
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("fileUrl", fileUrl)));
     }
 
     @Operation(summary = "파일 다운로드", description = "업로드된 파일을 다운로드합니다")
