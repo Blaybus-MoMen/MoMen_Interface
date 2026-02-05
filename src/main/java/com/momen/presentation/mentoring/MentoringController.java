@@ -4,11 +4,9 @@ import com.momen.application.mentoring.MentoringChatService;
 import com.momen.application.mentoring.MentoringService;
 import com.momen.application.mentoring.dto.MenteeResponse;
 import com.momen.application.planner.AssignmentService;
-import com.momen.application.planner.FeedbackService;
 import com.momen.application.planner.TodoService;
 import com.momen.application.planner.dto.*;
 import com.momen.core.dto.response.ApiResponse;
-import com.momen.domain.planner.FeedbackType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,7 +27,6 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 public class MentoringController {
 
-    private final FeedbackService feedbackService;
     private final MentoringChatService chatService;
     private final MentoringService mentoringService;
     private final TodoService todoService;
@@ -84,17 +81,6 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @Operation(summary = "Todo 피드백 작성", description = "멘토가 할일에 피드백을 작성합니다")
-    @PostMapping("/mentees/{menteeId}/todos/{todoId}/feedback")
-    public ResponseEntity<ApiResponse<Void>> writeTodoFeedback(
-            @RequestAttribute("userId") Long userId,
-            @PathVariable Long menteeId,
-            @PathVariable Long todoId,
-            @RequestBody TodoFeedbackRequest request) {
-        todoService.writeFeedback(userId, todoId, request);
-        return ResponseEntity.ok(ApiResponse.ok(null));
-    }
-
     // ==================== Todo 조회 ====================
 
     @Operation(summary = "멘티 일별 Todo 조회", description = "멘토가 특정 멘티의 특정 날짜 할일을 조회합니다")
@@ -127,53 +113,7 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionsByTodo(todoId)));
     }
 
-    // ==================== 피드백 ====================
-
-    @Operation(summary = "AI 피드백 초안 생성", description = "멘토가 특정 멘티의 기간별 AI 피드백 초안을 생성합니다")
-    @PostMapping("/mentees/{menteeId}/feedback/draft")
-    public ResponseEntity<ApiResponse<String>> generateFeedbackDraft(
-            @RequestAttribute("userId") Long userId,
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type,
-            @Parameter(description = "시작 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "종료 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(ApiResponse.ok(feedbackService.generateFeedbackDraft(userId, menteeId, type, startDate, endDate)));
-    }
-
-    @Operation(summary = "피드백 단건 조회", description = "특정 멘티의 기간별 피드백을 조회합니다")
-    @GetMapping("/mentees/{menteeId}/feedback")
-    public ResponseEntity<ApiResponse<FeedbackResponse>> getFeedback(
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type,
-            @Parameter(description = "시작 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
-        return ResponseEntity.ok(ApiResponse.ok(feedbackService.getFeedback(menteeId, type, startDate)));
-    }
-
-    @Operation(summary = "피드백 목록 조회", description = "특정 멘티의 피드백 목록을 조회합니다")
-    @GetMapping("/mentees/{menteeId}/feedback/list")
-    public ResponseEntity<ApiResponse<List<FeedbackResponse>>> getFeedbackList(
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "피드백 유형 (WEEKLY/MONTHLY)") @RequestParam FeedbackType type) {
-        return ResponseEntity.ok(ApiResponse.ok(feedbackService.getFeedbackList(menteeId, type)));
-    }
-
-    @Operation(summary = "피드백 작성/수정", description = "멘토가 피드백을 작성하거나 수정합니다")
-    @PostMapping("/mentees/{menteeId}/feedback")
-    public ResponseEntity<ApiResponse<FeedbackResponse>> saveFeedback(
-            @RequestAttribute("userId") Long userId,
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @RequestBody FeedbackRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(feedbackService.saveFeedback(userId, menteeId, request)));
-    }
-
-    @Operation(summary = "주차별 피드백 AI 요약", description = "해당 월의 멘토 피드백을 주차별·항목별(국어/수학/영어/총평)로 AI 요약합니다")
-    @GetMapping("/mentees/{menteeId}/feedback/weekly-summary")
-    public ResponseEntity<ApiResponse<MonthlyFeedbackSummaryResponse>> getWeeklyFeedbackSummary(
-            @RequestAttribute("userId") Long userId,
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
-        return ResponseEntity.ok(ApiResponse.ok(feedbackService.generateWeeklySummaries(userId, menteeId, yearMonth)));
-    }
+    // ==================== AI 튜터 ====================
 
     @Operation(summary = "AI 튜터 채팅", description = "멘티가 AI 튜터와 채팅합니다")
     @PostMapping("/chat")

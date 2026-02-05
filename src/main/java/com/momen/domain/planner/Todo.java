@@ -57,9 +57,6 @@ public class Todo extends BaseTimeEntity {
     @Column(name = "repeat_days", length = 100)
     private String repeatDays; // "MONDAY,WEDNESDAY", nullable
 
-    @Column(name = "mentor_feedback", columnDefinition = "TEXT")
-    private String mentorFeedback; // 멘토 피드백
-
     public Todo(Mentee mentee, String title, String subject, String goalDescription,
                 LocalDate startDate, LocalDate endDate, Long createdBy) {
         this.mentee = mentee;
@@ -104,9 +101,5 @@ public class Todo extends BaseTimeEntity {
     public void detachFromRepeatGroup() {
         this.repeatGroupId = null;
         this.repeatDays = null;
-    }
-
-    public void writeFeedback(String feedback) {
-        this.mentorFeedback = feedback;
     }
 }

@@ -155,18 +155,6 @@ public class TodoService {
         todo.setMentorConfirmed(confirmed);
     }
 
-    // Todo 피드백 작성
-    @Transactional
-    public void writeFeedback(Long mentorUserId, Long todoId, TodoFeedbackRequest request) {
-        mentorRepository.findByUserId(mentorUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
-
-        Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
-
-        todo.writeFeedback(request.getFeedback());
-    }
-
     // 멘티의 일별 Todo 조회 (멘토용)
     public List<TodoSummaryResponse> getTodosForMenteeByDate(Long mentorUserId, Long menteeId, LocalDate date) {
         mentorRepository.findByUserId(mentorUserId)
