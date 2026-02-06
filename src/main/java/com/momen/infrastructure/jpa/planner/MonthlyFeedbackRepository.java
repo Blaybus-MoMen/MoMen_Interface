@@ -11,4 +11,6 @@ public interface MonthlyFeedbackRepository extends JpaRepository<MonthlyFeedback
     Optional<MonthlyFeedback> findByMenteeIdAndYearAndMonth(Long menteeId, Integer year, Integer month);
 
     List<MonthlyFeedback> findByMenteeIdOrderByYearDescMonthDesc(Long menteeId);
+
+    List<MonthlyFeedback> findByMenteeIdAndYearOrderByMonthDesc(Long menteeId, Integer year);
 }

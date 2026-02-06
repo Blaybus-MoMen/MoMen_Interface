@@ -3,14 +3,12 @@ package com.momen.application.planner.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Getter
 @NoArgsConstructor
 public class WeeklyFeedbackRequest {
-    private Long menteeId;
-    private LocalDate weekStartDate;
-    private LocalDate weekEndDate;
+    private Integer year;
+    private Integer month;
+    private Integer week;          // 1~4주차
     private String overallReview;  // 멘토 총평
     private String wellDone;       // 이번주 잘한점
     private String toImprove;      // 다음주 보완할점

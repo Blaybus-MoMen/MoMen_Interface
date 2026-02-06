@@ -8,13 +8,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "weekly_feedbacks", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"mentee_id", "week_start_date"})
+        @UniqueConstraint(columnNames = {"mentee_id", "year", "month", "week"})
 })
 public class WeeklyFeedback extends BaseTimeEntity {
 
@@ -31,11 +29,14 @@ public class WeeklyFeedback extends BaseTimeEntity {
     @JoinColumn(name = "mentor_id", nullable = false)
     private Mentor mentor;
 
-    @Column(name = "week_start_date", nullable = false)
-    private LocalDate weekStartDate;
+    @Column(nullable = false)
+    private Integer year;
 
-    @Column(name = "week_end_date", nullable = false)
-    private LocalDate weekEndDate;
+    @Column(nullable = false)
+    private Integer month;
+
+    @Column(nullable = false)
+    private Integer week; // 1~4주차
 
     @Column(name = "overall_review", columnDefinition = "TEXT")
     private String overallReview; // 멘토 총평
@@ -49,11 +50,12 @@ public class WeeklyFeedback extends BaseTimeEntity {
     @Column(name = "ai_summary", columnDefinition = "TEXT")
     private String aiSummary; // AI 요약
 
-    public WeeklyFeedback(Mentee mentee, Mentor mentor, LocalDate weekStartDate, LocalDate weekEndDate) {
+    public WeeklyFeedback(Mentee mentee, Mentor mentor, Integer year, Integer month, Integer week) {
         this.mentee = mentee;
         this.mentor = mentor;
-        this.weekStartDate = weekStartDate;
-        this.weekEndDate = weekEndDate;
+        this.year = year;
+        this.month = month;
+        this.week = week;
     }
 
     public void update(String overallReview, String wellDone, String toImprove, String aiSummary) {

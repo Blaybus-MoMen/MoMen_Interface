@@ -38,16 +38,16 @@ public class WeeklyFeedbackService {
 
     // 주간 피드백 저장
     @Transactional
-    public WeeklyFeedbackResponse saveFeedback(Long mentorUserId, WeeklyFeedbackRequest request) {
+    public WeeklyFeedbackResponse saveFeedback(Long mentorUserId, Long menteeId, WeeklyFeedbackRequest request) {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
-        Mentee mentee = menteeRepository.findById(request.getMenteeId())
+        Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         WeeklyFeedback feedback = weeklyFeedbackRepository
-                .findByMenteeIdAndWeekStartDate(request.getMenteeId(), request.getWeekStartDate())
+                .findByMenteeIdAndYearAndMonthAndWeek(menteeId, request.getYear(), request.getMonth(), request.getWeek())
                 .orElseGet(() -> weeklyFeedbackRepository.save(
-                        new WeeklyFeedback(mentee, mentor, request.getWeekStartDate(), request.getWeekEndDate())
+                        new WeeklyFeedback(mentee, mentor, request.getYear(), request.getMonth(), request.getWeek())
                 ));
 
         feedback.update(
@@ -67,12 +67,24 @@ public class WeeklyFeedbackService {
         return WeeklyFeedbackResponse.from(feedback);
     }
 
-    // 멘티의 주간 피드백 목록 조회
-    public List<WeeklyFeedbackResponse> getFeedbackList(Long menteeId) {
-        return weeklyFeedbackRepository.findByMenteeIdOrderByWeekStartDateDesc(menteeId)
-                .stream()
-                .map(WeeklyFeedbackResponse::from)
-                .toList();
+    // 멘티의 주간 피드백 목록 조회 (필터 조건: year, month, week)
+    public List<WeeklyFeedbackResponse> getFeedbackList(Long menteeId, Integer year, Integer month, Integer week) {
+        if (year != null && month != null && week != null) {
+            return weeklyFeedbackRepository.findByMenteeIdAndYearAndMonthAndWeek(menteeId, year, month, week)
+                    .map(WeeklyFeedbackResponse::from)
+                    .map(List::of)
+                    .orElse(List.of());
+        } else if (year != null && month != null) {
+            return weeklyFeedbackRepository.findByMenteeIdAndYearAndMonthOrderByWeek(menteeId, year, month)
+                    .stream()
+                    .map(WeeklyFeedbackResponse::from)
+                    .toList();
+        } else {
+            return weeklyFeedbackRepository.findByMenteeIdOrderByYearDescMonthDescWeekDesc(menteeId)
+                    .stream()
+                    .map(WeeklyFeedbackResponse::from)
+                    .toList();
+        }
     }
 
     private String buildWeeklySummaryPrompt(String overallReview, String wellDone, String toImprove) {

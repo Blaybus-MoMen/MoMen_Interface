@@ -30,12 +30,12 @@ public class MonthlyFeedbackService {
     private final AiClient aiClient;
 
     // AI 요약 생성 (DB에서 주간피드백 조회 → AI 요약)
-    public String generateAiSummary(Long mentorUserId, MonthlyAiSummaryRequest request) {
+    public String generateAiSummary(Long mentorUserId, Long menteeId, MonthlyAiSummaryRequest request) {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
         List<WeeklyFeedback> weeklyFeedbacks = weeklyFeedbackRepository
-                .findByMenteeIdAndYearMonth(request.getMenteeId(), request.getYear(), request.getMonth());
+                .findByMenteeIdAndYearAndMonthOrderByWeek(menteeId, request.getYear(), request.getMonth());
 
         if (weeklyFeedbacks.isEmpty()) {
             throw new IllegalArgumentException("해당 월의 주간 피드백이 없습니다");
@@ -47,14 +47,14 @@ public class MonthlyFeedbackService {
 
     // 월간 피드백 저장
     @Transactional
-    public MonthlyFeedbackResponse saveFeedback(Long mentorUserId, MonthlyFeedbackRequest request) {
+    public MonthlyFeedbackResponse saveFeedback(Long mentorUserId, Long menteeId, MonthlyFeedbackRequest request) {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
-        Mentee mentee = menteeRepository.findById(request.getMenteeId())
+        Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         MonthlyFeedback feedback = monthlyFeedbackRepository
-                .findByMenteeIdAndYearAndMonth(request.getMenteeId(), request.getYear(), request.getMonth())
+                .findByMenteeIdAndYearAndMonth(menteeId, request.getYear(), request.getMonth())
                 .orElseGet(() -> monthlyFeedbackRepository.save(
                         new MonthlyFeedback(mentee, mentor, request.getYear(), request.getMonth())
                 ));
@@ -70,12 +70,24 @@ public class MonthlyFeedbackService {
         return MonthlyFeedbackResponse.from(feedback);
     }
 
-    // 멘티의 월간 피드백 목록 조회
-    public List<MonthlyFeedbackResponse> getFeedbackList(Long menteeId) {
-        return monthlyFeedbackRepository.findByMenteeIdOrderByYearDescMonthDesc(menteeId)
-                .stream()
-                .map(MonthlyFeedbackResponse::from)
-                .toList();
+    // 멘티의 월간 피드백 목록 조회 (필터 조건: year, month)
+    public List<MonthlyFeedbackResponse> getFeedbackList(Long menteeId, Integer year, Integer month) {
+        if (year != null && month != null) {
+            return monthlyFeedbackRepository.findByMenteeIdAndYearAndMonth(menteeId, year, month)
+                    .map(MonthlyFeedbackResponse::from)
+                    .map(List::of)
+                    .orElse(List.of());
+        } else if (year != null) {
+            return monthlyFeedbackRepository.findByMenteeIdAndYearOrderByMonthDesc(menteeId, year)
+                    .stream()
+                    .map(MonthlyFeedbackResponse::from)
+                    .toList();
+        } else {
+            return monthlyFeedbackRepository.findByMenteeIdOrderByYearDescMonthDesc(menteeId)
+                    .stream()
+                    .map(MonthlyFeedbackResponse::from)
+                    .toList();
+        }
     }
 
     private String buildMonthlySummaryPrompt(List<WeeklyFeedback> weeklyFeedbacks, int year, int month) {
@@ -83,10 +95,8 @@ public class MonthlyFeedbackService {
         sb.append(year).append("년 ").append(month).append("월의 주간 피드백들을 종합하여 ");
         sb.append("한 달간의 학습 성과를 3-4문장으로 요약해주세요.\n\n");
 
-        int weekNum = 1;
         for (WeeklyFeedback wf : weeklyFeedbacks) {
-            sb.append("=== ").append(weekNum++).append("주차 (")
-              .append(wf.getWeekStartDate()).append(" ~ ").append(wf.getWeekEndDate()).append(") ===\n");
+            sb.append("=== ").append(wf.getWeek()).append("주차 ===\n");
             sb.append("총평: ").append(wf.getOverallReview() != null ? wf.getOverallReview() : "없음").append("\n");
             sb.append("잘한점: ").append(wf.getWellDone() != null ? wf.getWellDone() : "없음").append("\n");
             sb.append("보완점: ").append(wf.getToImprove() != null ? wf.getToImprove() : "없음").append("\n\n");

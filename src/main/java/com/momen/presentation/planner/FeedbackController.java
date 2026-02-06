@@ -66,11 +66,12 @@ public class FeedbackController {
     }
 
     @Operation(summary = "주간 피드백 저장", description = "주간 피드백을 저장합니다")
-    @PostMapping("/weekly")
+    @PostMapping("/mentees/{menteeId}/weekly")
     public ResponseEntity<ApiResponse<WeeklyFeedbackResponse>> saveWeeklyFeedback(
             @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
             @RequestBody WeeklyFeedbackRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.saveFeedback(userId, request)));
+        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.saveFeedback(userId, menteeId, request)));
     }
 
     @Operation(summary = "주간 피드백 단건 조회", description = "주간 피드백을 조회합니다")
@@ -80,30 +81,35 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedback(feedbackId)));
     }
 
-    @Operation(summary = "주간 피드백 목록 조회", description = "멘티의 주간 피드백 목록을 조회합니다")
-    @GetMapping("/weekly/list/{menteeId}")
+    @Operation(summary = "주간 피드백 목록 조회", description = "멘티의 주간 피드백을 조회합니다. year+month로 월별, year+month+week로 특정 주차 조회 가능")
+    @GetMapping("/mentees/{menteeId}/weekly")
     public ResponseEntity<ApiResponse<List<WeeklyFeedbackResponse>>> getWeeklyFeedbackList(
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId) {
-        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedbackList(menteeId)));
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "연도") @RequestParam(required = false) Integer year,
+            @Parameter(description = "월") @RequestParam(required = false) Integer month,
+            @Parameter(description = "주차 (1~4)") @RequestParam(required = false) Integer week) {
+        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedbackList(menteeId, year, month, week)));
     }
 
     // ==================== 월간 피드백 ====================
 
-    @Operation(summary = "월간 피드백 AI 요약 생성", description = "해당 월의 주간피드백들을 기반으로 AI 요약을 생성합니다 (저장X)")
-    @PostMapping("/monthly/ai-summary")
+    @Operation(summary = "월간 피드백 AI 요약 생성", description = "해당 월의 주간피드백들을 기반으로 AI 요약을 생성합니다")
+    @PostMapping("/mentees/{menteeId}/monthly/ai-summary")
     public ResponseEntity<ApiResponse<Map<String, String>>> generateMonthlyAiSummary(
             @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
             @RequestBody MonthlyAiSummaryRequest request) {
-        String aiSummary = monthlyFeedbackService.generateAiSummary(userId, request);
+        String aiSummary = monthlyFeedbackService.generateAiSummary(userId, menteeId, request);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("aiSummary", aiSummary)));
     }
 
     @Operation(summary = "월간 피드백 저장", description = "월간 피드백을 저장합니다")
-    @PostMapping("/monthly")
+    @PostMapping("/mentees/{menteeId}/monthly")
     public ResponseEntity<ApiResponse<MonthlyFeedbackResponse>> saveMonthlyFeedback(
             @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
             @RequestBody MonthlyFeedbackRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.saveFeedback(userId, request)));
+        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.saveFeedback(userId, menteeId, request)));
     }
 
     @Operation(summary = "월간 피드백 단건 조회", description = "월간 피드백을 조회합니다")
@@ -113,10 +119,12 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedback(feedbackId)));
     }
 
-    @Operation(summary = "월간 피드백 목록 조회", description = "멘티의 월간 피드백 목록을 조회합니다")
-    @GetMapping("/monthly/list/{menteeId}")
+    @Operation(summary = "월간 피드백 목록 조회", description = "멘티의 월간 피드백을 조회합니다. year로 연도별, year+month로 특정 월 조회 가능")
+    @GetMapping("/mentees/{menteeId}/monthly")
     public ResponseEntity<ApiResponse<List<MonthlyFeedbackResponse>>> getMonthlyFeedbackList(
-            @Parameter(description = "멘티 ID") @PathVariable Long menteeId) {
-        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedbackList(menteeId)));
+            @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
+            @Parameter(description = "연도") @RequestParam(required = false) Integer year,
+            @Parameter(description = "월") @RequestParam(required = false) Integer month) {
+        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedbackList(menteeId, year, month)));
     }
 }
