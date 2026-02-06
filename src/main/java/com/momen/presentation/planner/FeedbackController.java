@@ -64,6 +64,9 @@ public class FeedbackController {
             @PathVariable Long menteeId,
             @RequestBody WeeklyAiSummaryRequest request) {
         String aiSummary = weeklyFeedbackService.generateAiSummary(userId, menteeId, request);
+        if (aiSummary == null) {
+            aiSummary = "이번 주에 등록된 피드백이 없습니다.";
+        }
         return ResponseEntity.ok(ApiResponse.ok(Map.of("aiSummary", aiSummary)));
     }
 
@@ -102,6 +105,9 @@ public class FeedbackController {
             @PathVariable Long menteeId,
             @RequestBody MonthlyAiSummaryRequest request) {
         String aiSummary = monthlyFeedbackService.generateAiSummary(userId, menteeId, request);
+        if (aiSummary == null) {
+            aiSummary = "이번 달에 작성된 주간 피드백이 없습니다.";
+        }
         return ResponseEntity.ok(ApiResponse.ok(Map.of("aiSummary", aiSummary)));
     }
 

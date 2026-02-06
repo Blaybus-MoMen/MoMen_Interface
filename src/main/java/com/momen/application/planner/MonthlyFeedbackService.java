@@ -38,7 +38,7 @@ public class MonthlyFeedbackService {
                 .findByMenteeIdAndYearAndMonthOrderByWeek(menteeId, request.getYear(), request.getMonth());
 
         if (weeklyFeedbacks.isEmpty()) {
-            throw new IllegalArgumentException("해당 월의 주간 피드백이 없습니다");
+            return null;
         }
 
         String prompt = buildMonthlySummaryPrompt(weeklyFeedbacks, request.getYear(), request.getMonth());

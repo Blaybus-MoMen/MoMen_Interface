@@ -44,13 +44,13 @@ public class WeeklyFeedbackService {
 
         List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, weekStart, weekEnd);
         if (todos.isEmpty()) {
-            throw new IllegalArgumentException("해당 주차에 등록된 Todo가 없습니다");
+            return null;
         }
 
         List<Long> todoIds = todos.stream().map(Todo::getId).toList();
         List<TodoFeedback> feedbacks = todoFeedbackRepository.findByTodoIdIn(todoIds);
         if (feedbacks.isEmpty()) {
-            throw new IllegalArgumentException("해당 주차 Todo에 작성된 피드백이 없습니다");
+            return null;
         }
 
         String prompt = buildWeeklySummaryPrompt(todos, feedbacks, request.getYear(), request.getMonth(), request.getWeek());
