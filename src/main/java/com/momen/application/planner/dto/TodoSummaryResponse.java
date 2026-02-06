@@ -17,8 +17,9 @@ public class TodoSummaryResponse {
     private LocalDate endDate;
     private String repeatDays;
     private Boolean mentorConfirmed;
+    private boolean hasFeedback;
 
-    public static TodoSummaryResponse from(Todo todo) {
+    public static TodoSummaryResponse from(Todo todo, boolean hasFeedback) {
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -28,6 +29,7 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .repeatDays(todo.getRepeatDays())
                 .mentorConfirmed(todo.getMentorConfirmed())
+                .hasFeedback(hasFeedback)
                 .build();
     }
 }

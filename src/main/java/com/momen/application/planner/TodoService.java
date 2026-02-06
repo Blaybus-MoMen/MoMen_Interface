@@ -8,6 +8,7 @@ import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.AssignmentMaterialRepository;
+import com.momen.infrastructure.jpa.planner.TodoFeedbackRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final TodoFeedbackRepository todoFeedbackRepository;
     private final AssignmentMaterialRepository materialRepository;
     private final MenteeRepository menteeRepository;
     private final MentorRepository mentorRepository;
@@ -160,9 +162,8 @@ public class TodoService {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        return todoRepository.findByMenteeIdAndDate(menteeId, date).stream()
-                .map(TodoSummaryResponse::from)
-                .collect(Collectors.toList());
+        List<Todo> todos = todoRepository.findByMenteeIdAndDate(menteeId, date);
+        return toSummaryWithFeedbackFlag(todos);
     }
 
     // 멘티의 월별 Todo 조회 (멘토용)
@@ -174,9 +175,8 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        return todoRepository.findByMenteeIdAndMonth(menteeId, start, end).stream()
-                .map(TodoSummaryResponse::from)
-                .collect(Collectors.toList());
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, start, end);
+        return toSummaryWithFeedbackFlag(todos);
     }
 
     // Todo 상세 조회
@@ -185,7 +185,8 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
         List<AssignmentMaterial> materials = materialRepository.findByTodoId(todoId);
-        return TodoDetailResponse.from(todo, materials);
+        boolean hasFeedback = todoFeedbackRepository.existsByTodoId(todoId);
+        return TodoDetailResponse.from(todo, materials, hasFeedback);
     }
 
     // ==================== 멘티용 API ====================
@@ -195,9 +196,8 @@ public class TodoService {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        return todoRepository.findByMenteeIdAndDate(mentee.getId(), date).stream()
-                .map(TodoSummaryResponse::from)
-                .collect(Collectors.toList());
+        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        return toSummaryWithFeedbackFlag(todos);
     }
 
     // 본인 월별 Todo 조회
@@ -209,9 +209,8 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        return todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end).stream()
-                .map(TodoSummaryResponse::from)
-                .collect(Collectors.toList());
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
+        return toSummaryWithFeedbackFlag(todos);
     }
 
     // Todo 완료 처리 / 공부 시간 기록 (멘티용)
@@ -238,5 +237,18 @@ public class TodoService {
         if (request.getStudyTime() != null) {
             todo.updateStudyTime(request.getStudyTime());
         }
+    }
+
+    // ==================== 공통 ====================
+
+    private List<TodoSummaryResponse> toSummaryWithFeedbackFlag(List<Todo> todos) {
+        if (todos.isEmpty()) return List.of();
+
+        List<Long> todoIds = todos.stream().map(Todo::getId).toList();
+        Set<Long> feedbackTodoIds = new HashSet<>(todoFeedbackRepository.findTodoIdsWithFeedback(todoIds));
+
+        return todos.stream()
+                .map(todo -> TodoSummaryResponse.from(todo, feedbackTodoIds.contains(todo.getId())))
+                .collect(Collectors.toList());
     }
 }

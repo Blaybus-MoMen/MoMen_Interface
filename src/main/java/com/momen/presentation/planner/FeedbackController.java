@@ -57,11 +57,13 @@ public class FeedbackController {
 
     // ==================== 주간 피드백 ====================
 
-    @Operation(summary = "주간 피드백 AI 요약 생성", description = "멘토가 작성한 내용을 기반으로 AI 요약을 생성합니다 (저장X)")
-    @PostMapping("/weekly/ai-summary")
+    @Operation(summary = "주간 피드백 AI 요약 생성", description = "해당 주차의 Todo 피드백들을 기반으로 AI 요약을 생성합니다 (저장X)")
+    @PostMapping("/mentees/{menteeId}/weekly/ai-summary")
     public ResponseEntity<ApiResponse<Map<String, String>>> generateWeeklyAiSummary(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
             @RequestBody WeeklyAiSummaryRequest request) {
-        String aiSummary = weeklyFeedbackService.generateAiSummary(request);
+        String aiSummary = weeklyFeedbackService.generateAiSummary(userId, menteeId, request);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("aiSummary", aiSummary)));
     }
 
