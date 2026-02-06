@@ -109,6 +109,15 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth)));
     }
 
+    @Operation(summary = "멘티 주별 Todo 조회", description = "멘토가 특정 멘티의 특정 주차 할일을 조회합니다 (일요일~토요일)")
+    @GetMapping(value = "/mentees/{menteeId}/todos", params = "weekStartDate")
+    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodosByWeek(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate)));
+    }
+
     @Operation(summary = "Todo 상세 조회", description = "할일의 상세 정보를 조회합니다 (자료파일 포함)")
     @GetMapping("/todos/{todoId}")
     public ResponseEntity<ApiResponse<TodoDetailResponse>> getTodoDetail(@PathVariable Long todoId) {

@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -29,13 +31,17 @@ public class MonthlyFeedbackService {
     private final MenteeRepository menteeRepository;
     private final AiClient aiClient;
 
-    // AI 요약 생성 (DB에서 주간피드백 조회 → AI 요약)
+    // AI 요약 생성 (해당 월 달력의 주간피드백들 조회 → AI 요약)
     public String generateAiSummary(Long mentorUserId, Long menteeId, MonthlyAiSummaryRequest request) {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
+        YearMonth ym = YearMonth.of(request.getYear(), request.getMonth());
+        LocalDate calendarStart = getCalendarStartDate(ym);
+        LocalDate lastOfMonth = ym.atEndOfMonth();
+
         List<WeeklyFeedback> weeklyFeedbacks = weeklyFeedbackRepository
-                .findByMenteeIdAndYearAndMonthOrderByWeek(menteeId, request.getYear(), request.getMonth());
+                .findByMenteeIdAndWeekStartDateBetweenOrderByWeekStartDate(menteeId, calendarStart, lastOfMonth);
 
         if (weeklyFeedbacks.isEmpty()) {
             return null;
@@ -70,10 +76,11 @@ public class MonthlyFeedbackService {
         return MonthlyFeedbackResponse.from(feedback);
     }
 
-    // 멘티의 월간 피드백 목록 조회 (필터 조건: year, month)
-    public List<MonthlyFeedbackResponse> getFeedbackList(Long menteeId, Integer year, Integer month) {
-        if (year != null && month != null) {
-            return monthlyFeedbackRepository.findByMenteeIdAndYearAndMonth(menteeId, year, month)
+    // 멘티의 월간 피드백 목록 조회 (필터: yearMonth 또는 year)
+    public List<MonthlyFeedbackResponse> getFeedbackList(Long menteeId, String yearMonth, Integer year) {
+        if (yearMonth != null) {
+            YearMonth ym = YearMonth.parse(yearMonth);
+            return monthlyFeedbackRepository.findByMenteeIdAndYearAndMonth(menteeId, ym.getYear(), ym.getMonthValue())
                     .map(MonthlyFeedbackResponse::from)
                     .map(List::of)
                     .orElse(List.of());
@@ -90,13 +97,23 @@ public class MonthlyFeedbackService {
         }
     }
 
+    // 해당 월 달력의 첫 번째 일요일 계산
+    private LocalDate getCalendarStartDate(YearMonth ym) {
+        LocalDate firstOfMonth = ym.atDay(1);
+        int dayOfWeek = firstOfMonth.getDayOfWeek().getValue() % 7; // 일=0, 월=1, ..., 토=6
+        return firstOfMonth.minusDays(dayOfWeek);
+    }
+
     private String buildMonthlySummaryPrompt(List<WeeklyFeedback> weeklyFeedbacks, int year, int month) {
         StringBuilder sb = new StringBuilder();
         sb.append(year).append("년 ").append(month).append("월의 주간 피드백들을 종합하여 ");
         sb.append("한 달간의 학습 성과를 3-4문장으로 요약해주세요.\n\n");
 
+        int weekNum = 1;
         for (WeeklyFeedback wf : weeklyFeedbacks) {
-            sb.append("=== ").append(wf.getWeek()).append("주차 ===\n");
+            LocalDate weekEnd = wf.getWeekStartDate().plusDays(6);
+            sb.append("=== ").append(weekNum++).append("주차 (")
+              .append(wf.getWeekStartDate()).append(" ~ ").append(weekEnd).append(") ===\n");
             sb.append("총평: ").append(wf.getOverallReview() != null ? wf.getOverallReview() : "없음").append("\n");
             sb.append("잘한점: ").append(wf.getWellDone() != null ? wf.getWellDone() : "없음").append("\n");
             sb.append("보완점: ").append(wf.getToImprove() != null ? wf.getToImprove() : "없음").append("\n\n");

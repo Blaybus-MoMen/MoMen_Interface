@@ -179,6 +179,17 @@ public class TodoService {
         return toSummaryWithFeedbackFlag(todos);
     }
 
+    // 멘티의 주별 Todo 조회 (멘토용)
+    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate) {
+        mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        LocalDate weekEnd = weekStartDate.plusDays(6);
+
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, weekStartDate, weekEnd);
+        return toSummaryWithFeedbackFlag(todos);
+    }
+
     // Todo 상세 조회
     public TodoDetailResponse getTodoDetail(Long todoId) {
         Todo todo = todoRepository.findById(todoId)
@@ -210,6 +221,17 @@ public class TodoService {
         LocalDate end = ym.atEndOfMonth();
 
         List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
+        return toSummaryWithFeedbackFlag(todos);
+    }
+
+    // 본인 주별 Todo 조회
+    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        LocalDate weekEnd = weekStartDate.plusDays(6);
+
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), weekStartDate, weekEnd);
         return toSummaryWithFeedbackFlag(todos);
     }
 

@@ -48,6 +48,14 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByMonth(userId, yearMonth)));
     }
 
+    @Operation(summary = "주별 Todo 조회", description = "멘티 본인의 특정 주차 할일을 조회합니다 (일요일~토요일)")
+    @GetMapping(value = "/todos", params = "weekStartDate")
+    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getMyTodosByWeek(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByWeek(userId, weekStartDate)));
+    }
+
     @Operation(summary = "Todo 상세 조회", description = "할일의 상세 정보를 조회합니다 (자료파일 포함)")
     @GetMapping("/todos/{todoId}")
     public ResponseEntity<ApiResponse<TodoDetailResponse>> getTodoDetail(@PathVariable Long todoId) {

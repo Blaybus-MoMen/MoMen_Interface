@@ -39,8 +39,8 @@ public class WeeklyFeedbackService {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        LocalDate weekStart = getWeekStartDate(request.getYear(), request.getMonth(), request.getWeek());
-        LocalDate weekEnd = getWeekEndDate(request.getYear(), request.getMonth(), request.getWeek());
+        LocalDate weekStart = request.getWeekStartDate();
+        LocalDate weekEnd = weekStart.plusDays(6);
 
         List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, weekStart, weekEnd);
         if (todos.isEmpty()) {
@@ -53,7 +53,7 @@ public class WeeklyFeedbackService {
             return null;
         }
 
-        String prompt = buildWeeklySummaryPrompt(todos, feedbacks, request.getYear(), request.getMonth(), request.getWeek());
+        String prompt = buildWeeklySummaryPrompt(feedbacks, weekStart);
         return aiClient.generateText(prompt);
     }
 
@@ -66,9 +66,9 @@ public class WeeklyFeedbackService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         WeeklyFeedback feedback = weeklyFeedbackRepository
-                .findByMenteeIdAndYearAndMonthAndWeek(menteeId, request.getYear(), request.getMonth(), request.getWeek())
+                .findByMenteeIdAndWeekStartDate(menteeId, request.getWeekStartDate())
                 .orElseGet(() -> weeklyFeedbackRepository.save(
-                        new WeeklyFeedback(mentee, mentor, request.getYear(), request.getMonth(), request.getWeek())
+                        new WeeklyFeedback(mentee, mentor, request.getWeekStartDate())
                 ));
 
         feedback.update(
@@ -88,43 +88,44 @@ public class WeeklyFeedbackService {
         return WeeklyFeedbackResponse.from(feedback);
     }
 
-    // 멘티의 주간 피드백 목록 조회 (필터 조건: year, month, week)
-    public List<WeeklyFeedbackResponse> getFeedbackList(Long menteeId, Integer year, Integer month, Integer week) {
-        if (year != null && month != null && week != null) {
-            return weeklyFeedbackRepository.findByMenteeIdAndYearAndMonthAndWeek(menteeId, year, month, week)
+    // 멘티의 주간 피드백 목록 조회 (필터: yearMonth, weekStartDate)
+    public List<WeeklyFeedbackResponse> getFeedbackList(Long menteeId, String yearMonth, LocalDate weekStartDate) {
+        if (weekStartDate != null) {
+            // 특정 주 단건 조회
+            return weeklyFeedbackRepository.findByMenteeIdAndWeekStartDate(menteeId, weekStartDate)
                     .map(WeeklyFeedbackResponse::from)
                     .map(List::of)
                     .orElse(List.of());
-        } else if (year != null && month != null) {
-            return weeklyFeedbackRepository.findByMenteeIdAndYearAndMonthOrderByWeek(menteeId, year, month)
+        } else if (yearMonth != null) {
+            // 해당 월 달력에 보이는 주간 피드백 조회
+            YearMonth ym = YearMonth.parse(yearMonth);
+            LocalDate calendarStart = getCalendarStartDate(ym);
+            LocalDate lastOfMonth = ym.atEndOfMonth();
+            return weeklyFeedbackRepository
+                    .findByMenteeIdAndWeekStartDateBetweenOrderByWeekStartDate(menteeId, calendarStart, lastOfMonth)
                     .stream()
                     .map(WeeklyFeedbackResponse::from)
                     .toList();
         } else {
-            return weeklyFeedbackRepository.findByMenteeIdOrderByYearDescMonthDescWeekDesc(menteeId)
+            // 전체 목록
+            return weeklyFeedbackRepository.findByMenteeIdOrderByWeekStartDateDesc(menteeId)
                     .stream()
                     .map(WeeklyFeedbackResponse::from)
                     .toList();
         }
     }
 
-    // 주차 → 시작일 계산 (1주차: 1일, 2주차: 8일, 3주차: 15일, 4주차: 22일)
-    private LocalDate getWeekStartDate(int year, int month, int week) {
-        int day = (week - 1) * 7 + 1;
-        return LocalDate.of(year, month, day);
+    // 해당 월 달력의 첫 번째 일요일 계산
+    private LocalDate getCalendarStartDate(YearMonth ym) {
+        LocalDate firstOfMonth = ym.atDay(1);
+        int dayOfWeek = firstOfMonth.getDayOfWeek().getValue() % 7; // 일=0, 월=1, ..., 토=6
+        return firstOfMonth.minusDays(dayOfWeek);
     }
 
-    // 주차 → 종료일 계산 (1주차: 7일, 2주차: 14일, 3주차: 21일, 4주차: 말일)
-    private LocalDate getWeekEndDate(int year, int month, int week) {
-        if (week == 4) {
-            return YearMonth.of(year, month).atEndOfMonth();
-        }
-        return LocalDate.of(year, month, week * 7);
-    }
-
-    private String buildWeeklySummaryPrompt(List<Todo> todos, List<TodoFeedback> feedbacks, int year, int month, int week) {
+    private String buildWeeklySummaryPrompt(List<TodoFeedback> feedbacks, LocalDate weekStart) {
+        LocalDate weekEnd = weekStart.plusDays(6);
         StringBuilder sb = new StringBuilder();
-        sb.append(year).append("년 ").append(month).append("월 ").append(week).append("주차의 ");
+        sb.append(weekStart).append(" ~ ").append(weekEnd).append(" 주간의 ");
         sb.append("Todo 피드백들을 종합하여 주간 학습 요약을 2-3문장으로 작성해주세요.\n\n");
 
         for (TodoFeedback tf : feedbacks) {

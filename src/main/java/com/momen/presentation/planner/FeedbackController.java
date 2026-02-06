@@ -10,9 +10,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -86,14 +88,13 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedback(feedbackId)));
     }
 
-    @Operation(summary = "주간 피드백 목록 조회", description = "멘티의 주간 피드백을 조회합니다. year+month로 월별, year+month+week로 특정 주차 조회 가능")
+    @Operation(summary = "주간 피드백 목록 조회", description = "멘티의 주간 피드백을 조회합니다. yearMonth로 월별 달력 조회, weekStartDate로 특정 주 조회 가능")
     @GetMapping("/mentees/{menteeId}/weekly")
     public ResponseEntity<ApiResponse<List<WeeklyFeedbackResponse>>> getWeeklyFeedbackList(
             @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "연도") @RequestParam(required = false) Integer year,
-            @Parameter(description = "월") @RequestParam(required = false) Integer month,
-            @Parameter(description = "주차 (1~4)") @RequestParam(required = false) Integer week) {
-        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedbackList(menteeId, year, month, week)));
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedbackList(menteeId, yearMonth, weekStartDate)));
     }
 
     // ==================== 월간 피드백 ====================
@@ -127,12 +128,12 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedback(feedbackId)));
     }
 
-    @Operation(summary = "월간 피드백 목록 조회", description = "멘티의 월간 피드백을 조회합니다. year로 연도별, year+month로 특정 월 조회 가능")
+    @Operation(summary = "월간 피드백 목록 조회", description = "멘티의 월간 피드백을 조회합니다. yearMonth로 특정 월, year로 연도별 조회 가능")
     @GetMapping("/mentees/{menteeId}/monthly")
     public ResponseEntity<ApiResponse<List<MonthlyFeedbackResponse>>> getMonthlyFeedbackList(
             @Parameter(description = "멘티 ID") @PathVariable Long menteeId,
-            @Parameter(description = "연도") @RequestParam(required = false) Integer year,
-            @Parameter(description = "월") @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedbackList(menteeId, year, month)));
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "연도") @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedbackList(menteeId, yearMonth, year)));
     }
 }
