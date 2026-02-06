@@ -38,6 +38,14 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMenteeList(userId)));
     }
 
+    @Operation(summary = "멘티 단건 조회", description = "멘토가 담당 멘티 한 명의 정보를 조회합니다")
+    @GetMapping("/mentees/{menteeId}")
+    public ResponseEntity<ApiResponse<MenteeResponse>> getMentee(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId) {
+        return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMentee(userId, menteeId)));
+    }
+
     // ==================== Todo CRUD ====================
 
     @Operation(summary = "Todo 생성", description = "멘토가 멘티에게 할일을 등록합니다 (단건/반복)")

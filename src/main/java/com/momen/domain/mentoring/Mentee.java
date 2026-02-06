@@ -7,6 +7,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,6 +34,11 @@ public class Mentee extends BaseTimeEntity {
 
     @Column(name = "target_university", length = 100)
     private String targetUniversity; // 목표 대학
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "mentee_cards", joinColumns = @JoinColumn(name = "mentee_id"))
+    @Column(name = "card", length = 50)
+    private List<String> cards = new ArrayList<>();
 
     public Mentee(User user, Mentor mentor, String grade, String targetUniversity) {
         this.user = user;
