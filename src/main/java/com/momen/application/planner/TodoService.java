@@ -432,4 +432,81 @@ public class TodoService {
             todo.updateStudyTime(request.getStudyTime());
         }
     }
+
+    // Todo별 학습 시간 수정
+    @Transactional
+    public void updateStudyTime(Long userId, Long todoId, int studyTime) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+
+        todo.updateStudyTime(studyTime);
+    }
+
+    // 학습시간 통계 조회 (일별)
+    public StudyTimeStatsResponse getStudyTimeStatsByDate(Long userId, LocalDate date) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
+                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    // 학습시간 통계 조회 (주별)
+    public StudyTimeStatsResponse getStudyTimeStatsByWeek(Long userId, LocalDate weekStartDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        LocalDate weekEnd = weekStartDate.plusDays(6);
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), weekStartDate, weekEnd)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), weekStartDate, weekEnd, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    // 학습시간 통계 조회 (월별)
+    public StudyTimeStatsResponse getStudyTimeStatsByMonth(Long userId, String yearMonth) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    private StudyTimeStatsResponse buildStudyTimeStats(List<Todo> todos) {
+        int totalMinutes = todos.stream()
+                .filter(t -> t.getStudyTime() != null)
+                .mapToInt(Todo::getStudyTime)
+                .sum();
+
+        Map<String, Integer> subjectMinutes = todos.stream()
+                .filter(t -> t.getStudyTime() != null)
+                .collect(Collectors.groupingBy(
+                        Todo::getSubject,
+                        Collectors.summingInt(Todo::getStudyTime)
+                ));
+
+        return StudyTimeStatsResponse.builder()
+                .totalStudyMinutes(totalMinutes)
+                .subjectStudyMinutes(subjectMinutes)
+                .build();
+    }
 }

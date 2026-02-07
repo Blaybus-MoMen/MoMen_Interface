@@ -123,6 +123,42 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @Operation(summary = "Todo 학습 시간 수정", description = "멘티가 특정 할일의 학습 시간(분)을 수정합니다")
+    @PatchMapping("/todos/{todoId}/study-time")
+    public ResponseEntity<ApiResponse<Void>> updateStudyTime(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId,
+            @RequestBody Map<String, Integer> request) {
+        todoService.updateStudyTime(userId, todoId, request.get("studyTime"));
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    // ==================== 학습시간 통계 ====================
+
+    @Operation(summary = "학습시간 통계 (일별)", description = "특정 날짜의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "date")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByDate(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByDate(userId, date)));
+    }
+
+    @Operation(summary = "학습시간 통계 (주별)", description = "특정 주의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "weekStartDate")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByWeek(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByWeek(userId, weekStartDate)));
+    }
+
+    @Operation(summary = "학습시간 통계 (월별)", description = "특정 월의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "yearMonth")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByMonth(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByMonth(userId, yearMonth)));
+    }
+
     @Operation(summary = "당일 학습 통계", description = "오늘(또는 지정 날짜) 하루의 총 학습·완료·남은 개수와 완료율을 조회합니다. 홈 프로그레스바용.")
     @GetMapping("/daily-stats")
     public ResponseEntity<ApiResponse<StudyDailyStatsResponse>> getDailyStats(
