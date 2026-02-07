@@ -1,12 +1,12 @@
 package com.momen.application.planner.dto;
 
 import com.momen.domain.planner.AssignmentMaterial;
+import com.momen.domain.planner.CreatorType;
 import com.momen.domain.planner.Todo;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,8 +19,8 @@ public class TodoDetailResponse {
     private String goalDescription;
     private LocalDate startDate;
     private LocalDate endDate;
-    private List<String> repeatDays;
     private Boolean mentorConfirmed;
+    private CreatorType creatorType;
     private Boolean isCompleted;
     private boolean hasFeedback;
     private List<MaterialInfo> materials;
@@ -53,20 +53,13 @@ public class TodoDetailResponse {
                 .goalDescription(todo.getGoalDescription())
                 .startDate(todo.getStartDate())
                 .endDate(todo.getEndDate())
-                .repeatDays(parseRepeatDays(todo.getRepeatDays()))
                 .mentorConfirmed(todo.getMentorConfirmed())
+                .creatorType(todo.getCreatorType())
                 .isCompleted(todo.getIsCompleted())
                 .hasFeedback(hasFeedback)
                 .materials(materials.stream()
                         .map(MaterialInfo::from)
                         .collect(Collectors.toList()))
                 .build();
-    }
-
-    private static List<String> parseRepeatDays(String repeatDays) {
-        if (repeatDays == null || repeatDays.isBlank()) {
-            return List.of();
-        }
-        return Arrays.asList(repeatDays.split(","));
     }
 }

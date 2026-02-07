@@ -1,12 +1,11 @@
 package com.momen.application.planner.dto;
 
+import com.momen.domain.planner.CreatorType;
 import com.momen.domain.planner.Todo;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
 
 @Getter
 @Builder
@@ -17,8 +16,8 @@ public class TodoSummaryResponse {
     private String goalDescription;
     private LocalDate startDate;
     private LocalDate endDate;
-    private List<String> repeatDays;
     private Boolean mentorConfirmed;
+    private CreatorType creatorType;
     private boolean hasFeedback;
 
     public static TodoSummaryResponse from(Todo todo) {
@@ -29,8 +28,8 @@ public class TodoSummaryResponse {
                 .goalDescription(todo.getGoalDescription())
                 .startDate(todo.getStartDate())
                 .endDate(todo.getEndDate())
-                .repeatDays(parseRepeatDays(todo.getRepeatDays()))
                 .mentorConfirmed(todo.getMentorConfirmed())
+                .creatorType(todo.getCreatorType())
                 .build();
     }
 
@@ -42,16 +41,9 @@ public class TodoSummaryResponse {
                 .goalDescription(todo.getGoalDescription())
                 .startDate(todo.getStartDate())
                 .endDate(todo.getEndDate())
-                .repeatDays(parseRepeatDays(todo.getRepeatDays()))
                 .mentorConfirmed(todo.getMentorConfirmed())
+                .creatorType(todo.getCreatorType())
                 .hasFeedback(hasFeedback)
                 .build();
-    }
-
-    private static List<String> parseRepeatDays(String repeatDays) {
-        if (repeatDays == null || repeatDays.isBlank()) {
-            return List.of();
-        }
-        return Arrays.asList(repeatDays.split(","));
     }
 }

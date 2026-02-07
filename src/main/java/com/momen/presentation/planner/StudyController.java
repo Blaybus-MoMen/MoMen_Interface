@@ -84,6 +84,35 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByMonth(userId, yearMonth)));
     }
 
+    // ==================== Todo CRUD (멘티용) ====================
+
+    @Operation(summary = "Todo 생성 (멘티)", description = "멘티가 본인의 할일을 생성합니다 (단건/반복)")
+    @PostMapping("/todos")
+    public ResponseEntity<ApiResponse<List<Long>>> createTodo(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody TodoCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.createTodoByMentee(userId, request)));
+    }
+
+    @Operation(summary = "Todo 내용 수정 (멘티)", description = "멘티가 본인이 생성한 할일의 내용을 수정합니다")
+    @PatchMapping("/todos/{todoId}/content")
+    public ResponseEntity<ApiResponse<Void>> updateTodoContent(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId,
+            @RequestBody TodoUpdateRequest request) {
+        todoService.updateTodoContentByMentee(userId, todoId, request);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @Operation(summary = "Todo 삭제 (멘티)", description = "멘티가 본인이 생성한 할일을 삭제합니다")
+    @DeleteMapping("/todos/{todoId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTodo(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId) {
+        todoService.deleteTodoByMentee(userId, todoId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     @Operation(summary = "Todo 완료/공부시간 기록", description = "멘티가 할일 완료 처리 및 공부 시간을 기록합니다")
     @PatchMapping("/todos/{todoId}")
     public ResponseEntity<ApiResponse<Void>> updateMyTodo(

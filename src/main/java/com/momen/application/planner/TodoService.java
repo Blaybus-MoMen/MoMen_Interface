@@ -4,6 +4,7 @@ import com.momen.application.planner.dto.*;
 import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.planner.AssignmentMaterial;
+import com.momen.domain.planner.CreatorType;
 import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
@@ -48,7 +49,7 @@ public class TodoService {
 
         if (request.getRepeatDays() != null && !request.getRepeatDays().isEmpty()) {
             // 반복 일정 생성
-            createdIds.addAll(createRepeatingTodos(mentee, mentor, request));
+            createdIds.addAll(createRepeatingTodos(mentee, mentor.getUser().getId(), CreatorType.MENTOR, request));
         } else {
             // 단건 생성
             Todo todo = new Todo(
@@ -58,7 +59,8 @@ public class TodoService {
                     request.getGoalDescription(),
                     request.getStartDate(),
                     request.getEndDate(),
-                    mentor.getUser().getId()
+                    mentor.getUser().getId(),
+                    CreatorType.MENTOR
             );
             todo = todoRepository.save(todo);
             saveMaterials(todo, request.getMaterials());
@@ -68,14 +70,13 @@ public class TodoService {
         return createdIds;
     }
 
-    private List<Long> createRepeatingTodos(Mentee mentee, Mentor mentor, TodoCreateRequest request) {
+    private List<Long> createRepeatingTodos(Mentee mentee, Long createdByUserId, CreatorType creatorType, TodoCreateRequest request) {
         Set<DayOfWeek> dayOfWeeks = request.getRepeatDays().stream()
                 .map(String::trim)
                 .map(String::toUpperCase)
                 .map(DayOfWeek::valueOf)
                 .collect(Collectors.toSet());
 
-        String groupId = UUID.randomUUID().toString();
         List<Long> ids = new ArrayList<>();
 
         LocalDate current = request.getStartDate();
@@ -88,11 +89,11 @@ public class TodoService {
                         request.getTitle(),
                         request.getSubject(),
                         request.getGoalDescription(),
-                        current, // 반복 일정은 해당일 단일
                         current,
-                        mentor.getUser().getId()
+                        current,
+                        createdByUserId,
+                        creatorType
                 );
-                todo.assignRepeatGroup(groupId, String.join(",", request.getRepeatDays()));
                 todo = todoRepository.save(todo);
                 saveMaterials(todo, request.getMaterials());
                 ids.add(todo.getId());
@@ -110,7 +111,7 @@ public class TodoService {
         }
     }
 
-    // Todo 수정 (멘토용)
+    // Todo 수정 (멘토용 - 멘토가 생성한 할일만)
     @Transactional
     public void updateTodoByMentor(Long mentorUserId, Long todoId, TodoUpdateRequest request) {
         mentorRepository.findByUserId(mentorUserId)
@@ -119,9 +120,8 @@ public class TodoService {
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
-        // 반복 그룹에서 분리
-        if (todo.getRepeatGroupId() != null) {
-            todo.detachFromRepeatGroup();
+        if (todo.getCreatorType() != CreatorType.MENTOR) {
+            throw new IllegalArgumentException("멘토가 생성한 할일만 수정할 수 있습니다");
         }
 
         if (request.getTitle() != null) {
@@ -135,7 +135,7 @@ public class TodoService {
         }
     }
 
-    // Todo 삭제
+    // Todo 삭제 (멘토용 - 멘토가 생성한 할일만)
     @Transactional
     public void deleteTodo(Long mentorUserId, Long todoId) {
         mentorRepository.findByUserId(mentorUserId)
@@ -143,6 +143,10 @@ public class TodoService {
 
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (todo.getCreatorType() != CreatorType.MENTOR) {
+            throw new IllegalArgumentException("멘토가 생성한 할일만 삭제할 수 있습니다");
+        }
 
         materialRepository.deleteByTodoId(todoId);
         todoRepository.delete(todo);
@@ -314,6 +318,87 @@ public class TodoService {
         return todos.stream()
                 .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of())))
                 .collect(Collectors.toList());
+    }
+
+    // Todo 생성 (멘티용)
+    @Transactional
+    public List<Long> createTodoByMentee(Long userId, TodoCreateRequest request) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        // 수강과목 검증
+        if (!mentee.getSubjects().isEmpty() && !mentee.getSubjects().contains(request.getSubject())) {
+            throw new IllegalArgumentException("수강 과목이 아닙니다: " + request.getSubject());
+        }
+
+        List<Long> createdIds = new ArrayList<>();
+
+        if (request.getRepeatDays() != null && !request.getRepeatDays().isEmpty()) {
+            createdIds.addAll(createRepeatingTodos(mentee, userId, CreatorType.MENTEE, request));
+        } else {
+            Todo todo = new Todo(
+                    mentee,
+                    request.getTitle(),
+                    request.getSubject(),
+                    request.getGoalDescription(),
+                    request.getStartDate(),
+                    request.getEndDate(),
+                    userId,
+                    CreatorType.MENTEE
+            );
+            todo = todoRepository.save(todo);
+            saveMaterials(todo, request.getMaterials());
+            createdIds.add(todo.getId());
+        }
+
+        return createdIds;
+    }
+
+    // Todo 내용 수정 (멘티용 - 멘티가 생성한 할일만)
+    @Transactional
+    public void updateTodoContentByMentee(Long userId, Long todoId, TodoUpdateRequest request) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+        if (todo.getCreatorType() != CreatorType.MENTEE) {
+            throw new IllegalArgumentException("멘티가 생성한 할일만 수정할 수 있습니다");
+        }
+
+        if (request.getTitle() != null) {
+            todo.updateContent(
+                    request.getTitle(),
+                    request.getSubject(),
+                    request.getGoalDescription(),
+                    request.getStartDate(),
+                    request.getEndDate()
+            );
+        }
+    }
+
+    // Todo 삭제 (멘티용 - 멘티가 생성한 할일만)
+    @Transactional
+    public void deleteTodoByMentee(Long userId, Long todoId) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+        if (todo.getCreatorType() != CreatorType.MENTEE) {
+            throw new IllegalArgumentException("멘티가 생성한 할일만 삭제할 수 있습니다");
+        }
+
+        materialRepository.deleteByTodoId(todoId);
+        todoRepository.delete(todo);
     }
 
     // Todo 완료 처리 / 공부 시간 기록 (멘티용)
