@@ -14,6 +14,7 @@ public class AssignmentSubmissionResponse {
     private Long todoId;
     private String fileUrl;
     private String fileName;
+    private String memo;
     private LocalDateTime submittedAt;
     private AnalysisStatus aiAnalysisStatus;
     private Integer studyDensityScore;
@@ -25,6 +26,7 @@ public class AssignmentSubmissionResponse {
                 .todoId(submission.getTodo().getId())
                 .fileUrl(submission.getFileUrl())
                 .fileName(submission.getFileName())
+                .memo(submission.getMemo())
                 .submittedAt(submission.getSubmittedAt())
                 .aiAnalysisStatus(submission.getAiAnalysisStatus())
                 .studyDensityScore(submission.getStudyDensityScore())

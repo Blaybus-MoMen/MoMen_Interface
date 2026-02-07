@@ -41,3 +41,6 @@ out/
 /uploads
 .env
 logs
+
+### macOS ###
+.DS_Store

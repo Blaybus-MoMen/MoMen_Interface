@@ -62,6 +62,22 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getTodoDetail(todoId)));
     }
 
+    @Operation(summary = "학습 카드 목록 조회 (일별)", description = "해당 날짜의 학습 할일을 카드 표시용 배열로 조회합니다 (진행상태, 학습지 포함)")
+    @GetMapping(value = "/todos/cards", params = "date")
+    public ResponseEntity<ApiResponse<List<TodoDetailResponse>>> getMyTodoCardsByDate(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByDate(userId, date)));
+    }
+
+    @Operation(summary = "학습 카드 목록 조회 (월별)", description = "해당 월의 학습 할일을 카드 표시용 배열로 조회합니다 (진행상태, 학습지 포함)")
+    @GetMapping(value = "/todos/cards", params = "yearMonth")
+    public ResponseEntity<ApiResponse<List<TodoDetailResponse>>> getMyTodoCardsByMonth(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByMonth(userId, yearMonth)));
+    }
+
     @Operation(summary = "Todo 완료/공부시간 기록", description = "멘티가 할일 완료 처리 및 공부 시간을 기록합니다")
     @PatchMapping("/todos/{todoId}")
     public ResponseEntity<ApiResponse<Void>> updateMyTodo(
@@ -74,7 +90,7 @@ public class StudyController {
 
     // ==================== 과제 제출 ====================
 
-    @Operation(summary = "과제 제출", description = "할일에 대한 과제를 제출합니다. AI Vision 자동 검수가 시작됩니다")
+    @Operation(summary = "학습 점검하기 (과제 제출 + 학습 완료)", description = "파일·텍스트(메모)를 제출하면 해당 할일이 학습 완료로 표시됩니다. 파일 첨부 시 AI Vision 자동 검수가 진행됩니다.")
     @PostMapping("/todos/{todoId}/submit")
     public ResponseEntity<ApiResponse<Long>> submitAssignment(
             @RequestAttribute("userId") Long userId,

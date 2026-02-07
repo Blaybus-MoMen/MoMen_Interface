@@ -23,11 +23,14 @@ public class AssignmentSubmission extends BaseTimeEntity {
     @JoinColumn(name = "todo_id", nullable = false)
     private Todo todo;
 
-    @Column(name = "file_url", nullable = false, length = 500)
+    @Column(name = "file_url", length = 500)
     private String fileUrl;
 
     @Column(name = "file_name", length = 255)
     private String fileName;
+
+    @Column(name = "memo", columnDefinition = "TEXT")
+    private String memo; // 학습 점검 텍스트 (메모)
 
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
@@ -43,10 +46,11 @@ public class AssignmentSubmission extends BaseTimeEntity {
     @Column(name = "ai_check_comment", columnDefinition = "TEXT")
     private String aiCheckComment; // AI 자동 검수 코멘트
 
-    public AssignmentSubmission(Todo todo, String fileUrl, String fileName) {
+    public AssignmentSubmission(Todo todo, String fileUrl, String fileName, String memo) {
         this.todo = todo;
         this.fileUrl = fileUrl;
         this.fileName = fileName;
+        this.memo = memo;
         this.submittedAt = LocalDateTime.now();
     }
 

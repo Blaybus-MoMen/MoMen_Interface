@@ -26,7 +26,7 @@ public class AssignmentService {
     private final MenteeRepository menteeRepository;
     private final AiClient aiClient;
 
-    // 멘티 과제 제출
+    /** 학습 점검하기: 파일·텍스트(메모) 제출 후 해당 Todo를 학습 완료 처리 */
     @Transactional
     public Long submitAssignment(Long userId, Long todoId, SubmissionRequest request) {
         Mentee mentee = menteeRepository.findByUserId(userId)
@@ -39,10 +39,24 @@ public class AssignmentService {
             throw new IllegalArgumentException("접근 권한이 없습니다");
         }
 
-        AssignmentSubmission submission = new AssignmentSubmission(todo, request.getFileUrl(), request.getFileName());
+        boolean hasFile = request.getFileUrl() != null && !request.getFileUrl().isBlank();
+        boolean hasMemo = request.getMemo() != null && !request.getMemo().isBlank();
+        if (!hasFile && !hasMemo) {
+            throw new IllegalArgumentException("파일 또는 학습 메모 중 하나 이상 입력해 주세요");
+        }
+
+        String fileUrl = hasFile ? request.getFileUrl() : null;
+        String fileName = (request.getFileName() != null) ? request.getFileName() : null;
+        String memo = hasMemo ? request.getMemo() : null;
+
+        AssignmentSubmission submission = new AssignmentSubmission(todo, fileUrl, fileName, memo);
         submissionRepository.save(submission);
 
-        analyzeSubmissionAsync(submission.getId(), request.getFileUrl());
+        if (hasFile) {
+            analyzeSubmissionAsync(submission.getId(), request.getFileUrl());
+        }
+
+        todo.complete();
         return submission.getId();
     }
 
