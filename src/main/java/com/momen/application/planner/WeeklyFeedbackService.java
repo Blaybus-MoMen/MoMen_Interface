@@ -1,13 +1,16 @@
 package com.momen.application.planner;
 
+import com.momen.application.notification.NotificationService;
 import com.momen.application.planner.dto.WeeklyAiSummaryRequest;
 import com.momen.application.planner.dto.WeeklyFeedbackRequest;
 import com.momen.application.planner.dto.WeeklyFeedbackResponse;
 import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
+import com.momen.domain.notification.NotificationType;
 import com.momen.domain.planner.Todo;
 import com.momen.domain.planner.TodoFeedback;
 import com.momen.domain.planner.WeeklyFeedback;
+import com.momen.domain.user.User;
 import com.momen.infrastructure.external.ai.AiClient;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
@@ -33,6 +36,7 @@ public class WeeklyFeedbackService {
     private final MentorRepository mentorRepository;
     private final MenteeRepository menteeRepository;
     private final AiClient aiClient;
+    private final NotificationService notificationService;
 
     // AI 요약 생성 (해당 주차 Todo 피드백들을 DB에서 조회 → AI 요약)
     public String generateAiSummary(Long mentorUserId, Long menteeId, WeeklyAiSummaryRequest request) {
@@ -77,6 +81,14 @@ public class WeeklyFeedbackService {
                 request.getToImprove(),
                 request.getAiSummary()
         );
+
+        // 멘티에게 주간 피드백 알림 전송
+        User menteeUser = mentee.getUser();
+        LocalDate weekEnd = request.getWeekStartDate().plusDays(6);
+        String message = String.format("%d월 %d일 ~ %d월 %d일 주간 피드백이 등록되었습니다.",
+                request.getWeekStartDate().getMonthValue(), request.getWeekStartDate().getDayOfMonth(),
+                weekEnd.getMonthValue(), weekEnd.getDayOfMonth());
+        notificationService.createAndPush(menteeUser, message, NotificationType.WEEKLY_FEEDBACK, feedback.getId());
 
         return WeeklyFeedbackResponse.from(feedback);
     }
@@ -131,9 +143,9 @@ public class WeeklyFeedbackService {
         for (TodoFeedback tf : feedbacks) {
             Todo todo = tf.getTodo();
             sb.append("=== ").append(todo.getTitle()).append(" (").append(todo.getSubject()).append(") ===\n");
-            sb.append("학습점검: ").append(tf.getStudyCheck() != null ? tf.getStudyCheck() : "없음").append("\n");
             sb.append("멘토피드백: ").append(tf.getMentorComment() != null ? tf.getMentorComment() : "없음").append("\n");
-            sb.append("Q&A: ").append(tf.getQna() != null ? tf.getQna() : "없음").append("\n\n");
+            sb.append("멘티질문: ").append(tf.getQuestion() != null ? tf.getQuestion() : "없음").append("\n");
+            sb.append("멘토답변: ").append(tf.getAnswer() != null ? tf.getAnswer() : "없음").append("\n\n");
         }
 
         sb.append("위 피드백들을 바탕으로 이번 주 학습 성과와 개선점을 포함한 요약을 작성해주세요.");

@@ -41,7 +41,7 @@ public class TodoService {
 
         List<Long> createdIds = new ArrayList<>();
 
-        if (request.getRepeatDays() != null && !request.getRepeatDays().isBlank()) {
+        if (request.getRepeatDays() != null && !request.getRepeatDays().isEmpty()) {
             // 반복 일정 생성
             createdIds.addAll(createRepeatingTodos(mentee, mentor, request));
         } else {
@@ -64,7 +64,7 @@ public class TodoService {
     }
 
     private List<Long> createRepeatingTodos(Mentee mentee, Mentor mentor, TodoCreateRequest request) {
-        Set<DayOfWeek> dayOfWeeks = Arrays.stream(request.getRepeatDays().split(","))
+        Set<DayOfWeek> dayOfWeeks = request.getRepeatDays().stream()
                 .map(String::trim)
                 .map(String::toUpperCase)
                 .map(DayOfWeek::valueOf)
@@ -87,7 +87,7 @@ public class TodoService {
                         current,
                         mentor.getUser().getId()
                 );
-                todo.assignRepeatGroup(groupId, request.getRepeatDays());
+                todo.assignRepeatGroup(groupId, String.join(",", request.getRepeatDays()));
                 todo = todoRepository.save(todo);
                 saveMaterials(todo, request.getMaterials());
                 ids.add(todo.getId());

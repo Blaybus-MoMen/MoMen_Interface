@@ -21,4 +21,9 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     List<Todo> findByMenteeIdAndMonth(@Param("menteeId") Long menteeId,
                                        @Param("startOfMonth") LocalDate startOfMonth,
                                        @Param("endOfMonth") LocalDate endOfMonth);
+
+    // 특정 날짜의 미완료 Todo 조회 (멘티, 유저 정보 함께 로딩)
+    @Query("SELECT t FROM Todo t JOIN FETCH t.mentee m JOIN FETCH m.user " +
+           "WHERE t.startDate <= :date AND t.endDate >= :date AND t.isCompleted = false")
+    List<Todo> findIncompleteByDateWithMenteeAndUser(@Param("date") LocalDate date);
 }

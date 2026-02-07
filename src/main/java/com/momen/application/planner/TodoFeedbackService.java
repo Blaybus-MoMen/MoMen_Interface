@@ -1,10 +1,13 @@
 package com.momen.application.planner;
 
+import com.momen.application.notification.NotificationService;
 import com.momen.application.planner.dto.TodoFeedbackRequest;
 import com.momen.application.planner.dto.TodoFeedbackResponse;
 import com.momen.domain.mentoring.Mentee;
+import com.momen.domain.notification.NotificationType;
 import com.momen.domain.planner.Todo;
 import com.momen.domain.planner.TodoFeedback;
+import com.momen.domain.user.User;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.TodoFeedbackRepository;
@@ -22,6 +25,7 @@ public class TodoFeedbackService {
     private final TodoRepository todoRepository;
     private final MentorRepository mentorRepository;
     private final MenteeRepository menteeRepository;
+    private final NotificationService notificationService;
 
     // 멘토: Todo 피드백 작성/수정
     @Transactional
@@ -35,13 +39,19 @@ public class TodoFeedbackService {
         TodoFeedback feedback = todoFeedbackRepository.findByTodoId(todoId)
                 .orElseGet(() -> todoFeedbackRepository.save(new TodoFeedback(todo)));
 
-        feedback.updateByMentor(request.getStudyCheck(), request.getMentorComment(), request.getQna());
+        feedback.updateByMentor(request.getMentorComment(), request.getAnswer());
+
+        // 멘티에게 피드백 알림 전송
+        User menteeUser = todo.getMentee().getUser();
+        String message = "'" + todo.getTitle() + "' 과제에 멘토 피드백이 등록되었습니다.";
+        notificationService.createAndPush(menteeUser, message, NotificationType.TODO_FEEDBACK, todoId);
+
         return TodoFeedbackResponse.from(feedback);
     }
 
-    // 멘티: Q&A 수정
+    // 멘티: 질문 수정
     @Transactional
-    public TodoFeedbackResponse updateQnaByMentee(Long menteeUserId, Long todoId, String qna) {
+    public TodoFeedbackResponse updateQuestionByMentee(Long menteeUserId, Long todoId, String question) {
         Mentee mentee = menteeRepository.findByUserId(menteeUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
@@ -55,7 +65,7 @@ public class TodoFeedbackService {
         TodoFeedback feedback = todoFeedbackRepository.findByTodoId(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Feedback not found"));
 
-        feedback.updateQnaByMentee(qna);
+        feedback.updateQuestionByMentee(question);
         return TodoFeedbackResponse.from(feedback);
     }
 

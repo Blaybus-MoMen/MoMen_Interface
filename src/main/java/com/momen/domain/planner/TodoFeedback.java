@@ -21,26 +21,25 @@ public class TodoFeedback extends BaseTimeEntity {
     @JoinColumn(name = "todo_id", nullable = false, unique = true)
     private Todo todo;
 
-    @Column(name = "study_check", columnDefinition = "TEXT")
-    private String studyCheck; // 학습 점검
-
     @Column(name = "mentor_comment", columnDefinition = "TEXT")
     private String mentorComment; // 멘토 피드백
 
-    @Column(name = "qna", columnDefinition = "TEXT")
-    private String qna; // Q&A (멘토+멘티 공동 작성)
+    @Column(name = "question", columnDefinition = "TEXT")
+    private String question; // 멘티 질문
+
+    @Column(name = "answer", columnDefinition = "TEXT")
+    private String answer; // 멘토 답변
 
     public TodoFeedback(Todo todo) {
         this.todo = todo;
     }
 
-    public void updateByMentor(String studyCheck, String mentorComment, String qna) {
-        this.studyCheck = studyCheck;
+    public void updateByMentor(String mentorComment, String answer) {
         this.mentorComment = mentorComment;
-        this.qna = qna;
+        this.answer = answer;
     }
 
-    public void updateQnaByMentee(String qna) {
-        this.qna = qna;
+    public void updateQuestionByMentee(String question) {
+        this.question = question;
     }
 }
