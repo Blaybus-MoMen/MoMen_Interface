@@ -170,27 +170,20 @@ public class StudyController {
 
     // ==================== 과제 제출 ====================
 
-    @Operation(summary = "학습 점검하기 (과제 제출 + 학습 완료)", description = "파일·텍스트(메모)를 제출하면 해당 할일이 학습 완료로 표시됩니다. 파일 첨부 시 AI Vision 자동 검수가 진행됩니다.")
+    @Operation(summary = "과제 제출/수정", description = "파일·텍스트(메모)를 제출합니다. 기존 제출이 있으면 수정됩니다. Todo당 1건만 존재합니다.")
     @PostMapping("/todos/{todoId}/submit")
-    public ResponseEntity<ApiResponse<Long>> submitAssignment(
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> submitAssignment(
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "할 일 ID") @PathVariable Long todoId,
             @RequestBody SubmissionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(assignmentService.submitAssignment(userId, todoId, request)));
     }
 
-    @Operation(summary = "제출물 상세 조회", description = "과제 제출물의 상세 정보와 AI 분석 결과를 조회합니다")
-    @GetMapping("/submissions/{submissionId}")
-    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmission(
-            @Parameter(description = "제출물 ID") @PathVariable Long submissionId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmission(submissionId)));
-    }
-
-    @Operation(summary = "Todo별 제출 목록 조회", description = "특정 할일에 대한 제출 목록을 조회합니다")
-    @GetMapping("/todos/{todoId}/submissions")
-    public ResponseEntity<ApiResponse<List<AssignmentSubmissionResponse>>> getSubmissionsByTodo(
+    @Operation(summary = "Todo별 제출물 조회", description = "특정 할일의 제출물과 첨부파일 목록을 조회합니다")
+    @GetMapping("/todos/{todoId}/submission")
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmissionByTodo(
             @Parameter(description = "할 일 ID") @PathVariable Long todoId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionsByTodo(todoId)));
+        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionByTodo(todoId)));
     }
 
     // ==================== 오답노트 ====================
