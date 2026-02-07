@@ -214,6 +214,41 @@ public class TodoService {
                 .collect(Collectors.toList());
     }
 
+    // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함) 
+    public List<TodoDetailResponse> getMyTodoCardsByDate(Long userId, LocalDate date) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        return toDetailResponseList(todos);
+    }
+
+    /** 카드 UI용: 월별 Todo 배열 (진행상태, 학습지 포함) */
+    public List<TodoDetailResponse> getMyTodoCardsByMonth(Long userId, String yearMonth) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
+        return toDetailResponseList(todos);
+    }
+
+    private List<TodoDetailResponse> toDetailResponseList(List<Todo> todos) {
+        if (todos.isEmpty()) {
+            return List.of();
+        }
+        List<Long> todoIds = todos.stream().map(Todo::getId).toList();
+        List<AssignmentMaterial> allMaterials = materialRepository.findByTodoIdIn(todoIds);
+        Map<Long, List<AssignmentMaterial>> materialsByTodoId = allMaterials.stream()
+                .collect(Collectors.groupingBy(m -> m.getTodo().getId()));
+
+        return todos.stream()
+                .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of())))
+                .collect(Collectors.toList());
+    }
+
     // Todo 완료 처리 / 공부 시간 기록 (멘티용)
     @Transactional
     public void updateTodoByMentee(Long userId, Long todoId, TodoUpdateRequest request) {
