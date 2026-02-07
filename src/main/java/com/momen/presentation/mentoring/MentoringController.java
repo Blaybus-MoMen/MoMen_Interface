@@ -38,6 +38,14 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMenteeList(userId)));
     }
 
+    @Operation(summary = "멘티 단건 조회", description = "멘토가 담당 멘티 한 명의 정보를 조회합니다")
+    @GetMapping("/mentees/{menteeId}")
+    public ResponseEntity<ApiResponse<MenteeResponse>> getMentee(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId) {
+        return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMentee(userId, menteeId)));
+    }
+
     // ==================== Todo CRUD ====================
 
     @Operation(summary = "Todo 생성", description = "멘토가 멘티에게 할일을 등록합니다 (단건/반복)")
@@ -99,6 +107,15 @@ public class MentoringController {
             @PathVariable Long menteeId,
             @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth)));
+    }
+
+    @Operation(summary = "멘티 주별 Todo 조회", description = "멘토가 특정 멘티의 특정 주차 할일을 조회합니다 (일요일~토요일)")
+    @GetMapping(value = "/mentees/{menteeId}/todos", params = "weekStartDate")
+    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodosByWeek(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long menteeId,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate)));
     }
 
     @Operation(summary = "Todo 상세 조회", description = "할일의 상세 정보를 조회합니다 (자료파일 포함)")

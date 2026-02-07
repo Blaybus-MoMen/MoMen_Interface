@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class MonthlyAiSummaryRequest {
-    private Long menteeId;
     private Integer year;
     private Integer month;
 }

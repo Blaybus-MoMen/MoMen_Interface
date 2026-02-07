@@ -47,4 +47,16 @@ public class MentoringService {
                 .map(MenteeResponse::from)
                 .collect(Collectors.toList());
     }
+
+    // 멘토의 담당 멘티 단건 조회
+    public MenteeResponse getMentee(Long mentorUserId, Long menteeId) {
+        Mentor mentor = mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Mentee mentee = menteeRepository.findById(menteeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        if (!mentee.getMentor().getId().equals(mentor.getId())) {
+            throw new IllegalArgumentException("해당 멘티는 담당 멘티가 아닙니다");
+        }
+        return MenteeResponse.from(mentee);
+    }
 }

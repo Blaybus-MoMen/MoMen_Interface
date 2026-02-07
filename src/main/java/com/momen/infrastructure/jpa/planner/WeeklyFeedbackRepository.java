@@ -2,8 +2,6 @@ package com.momen.infrastructure.jpa.planner;
 
 import com.momen.domain.planner.WeeklyFeedback;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,10 +13,7 @@ public interface WeeklyFeedbackRepository extends JpaRepository<WeeklyFeedback, 
 
     List<WeeklyFeedback> findByMenteeIdOrderByWeekStartDateDesc(Long menteeId);
 
-    @Query("SELECT wf FROM WeeklyFeedback wf WHERE wf.mentee.id = :menteeId " +
-           "AND YEAR(wf.weekStartDate) = :year AND MONTH(wf.weekStartDate) = :month " +
-           "ORDER BY wf.weekStartDate")
-    List<WeeklyFeedback> findByMenteeIdAndYearMonth(@Param("menteeId") Long menteeId,
-                                                     @Param("year") int year,
-                                                     @Param("month") int month);
+    // 해당 월 달력에 보이는 주간 피드백 조회 (크로스월 포함)
+    List<WeeklyFeedback> findByMenteeIdAndWeekStartDateBetweenOrderByWeekStartDate(
+            Long menteeId, LocalDate from, LocalDate to);
 }

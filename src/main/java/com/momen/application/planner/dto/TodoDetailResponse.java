@@ -21,6 +21,7 @@ public class TodoDetailResponse {
     private String repeatDays;
     private Boolean mentorConfirmed;
     private Boolean isCompleted;
+    private boolean hasFeedback;
     private List<MaterialInfo> materials;
 
     @Getter
@@ -39,7 +40,7 @@ public class TodoDetailResponse {
         }
     }
 
-    public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials) {
+    public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials, boolean hasFeedback) {
         return TodoDetailResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -50,6 +51,7 @@ public class TodoDetailResponse {
                 .repeatDays(todo.getRepeatDays())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .isCompleted(todo.getIsCompleted())
+                .hasFeedback(hasFeedback)
                 .materials(materials.stream()
                         .map(MaterialInfo::from)
                         .collect(Collectors.toList()))

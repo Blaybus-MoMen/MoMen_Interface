@@ -32,10 +32,7 @@ public class WeeklyFeedback extends BaseTimeEntity {
     private Mentor mentor;
 
     @Column(name = "week_start_date", nullable = false)
-    private LocalDate weekStartDate;
-
-    @Column(name = "week_end_date", nullable = false)
-    private LocalDate weekEndDate;
+    private LocalDate weekStartDate; // 해당 주의 일요일
 
     @Column(name = "overall_review", columnDefinition = "TEXT")
     private String overallReview; // 멘토 총평
@@ -49,11 +46,10 @@ public class WeeklyFeedback extends BaseTimeEntity {
     @Column(name = "ai_summary", columnDefinition = "TEXT")
     private String aiSummary; // AI 요약
 
-    public WeeklyFeedback(Mentee mentee, Mentor mentor, LocalDate weekStartDate, LocalDate weekEndDate) {
+    public WeeklyFeedback(Mentee mentee, Mentor mentor, LocalDate weekStartDate) {
         this.mentee = mentee;
         this.mentor = mentor;
         this.weekStartDate = weekStartDate;
-        this.weekEndDate = weekEndDate;
     }
 
     public void update(String overallReview, String wellDone, String toImprove, String aiSummary) {

@@ -4,6 +4,8 @@ import com.momen.domain.mentoring.Mentee;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class MenteeResponse {
@@ -12,6 +14,7 @@ public class MenteeResponse {
     private String name;
     private String grade;
     private String targetUniversity;
+    private List<String> cards;
 
     public static MenteeResponse from(Mentee mentee) {
         return MenteeResponse.builder()
@@ -20,6 +23,7 @@ public class MenteeResponse {
                 .name(mentee.getUser().getName())
                 .grade(mentee.getGrade())
                 .targetUniversity(mentee.getTargetUniversity())
+                .cards(mentee.getCards())
                 .build();
     }
 }
