@@ -51,7 +51,7 @@ public class AuthService {
             Mentor mentor = new Mentor(user, request.getIntro());
             mentorRepository.save(mentor);
         } else {
-            Mentee mentee = new Mentee(user, null, request.getGrade(), request.getTargetUniversity());
+            Mentee mentee = new Mentee(user, null, request.getGrade());
             menteeRepository.save(mentee);
         }
 

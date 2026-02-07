@@ -63,7 +63,7 @@ public class DataSeeder implements CommandLineRunner {
         mentee1User.verifyEmail();
         userRepository.save(mentee1User);
 
-        Mentee mentee1 = new Mentee(mentee1User, mentor, "고2", "서울대");
+        Mentee mentee1 = new Mentee(mentee1User, mentor, "고2");
         menteeRepository.save(mentee1);
 
         User mentee2User = User.builder()
@@ -77,7 +77,7 @@ public class DataSeeder implements CommandLineRunner {
         mentee2User.verifyEmail();
         userRepository.save(mentee2User);
 
-        Mentee mentee2 = new Mentee(mentee2User, mentor, "고3", "연세대");
+        Mentee mentee2 = new Mentee(mentee2User, mentor, "고3");
         menteeRepository.save(mentee2);
 
         log.info("Test data seeded: 1 mentor (mentor01), 2 mentees (mentee01, mentee02). Password: test1234!");

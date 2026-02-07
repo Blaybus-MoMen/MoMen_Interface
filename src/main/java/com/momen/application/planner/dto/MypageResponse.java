@@ -10,7 +10,6 @@ import java.util.Map;
 public class MypageResponse {
     private String name;
     private String grade;
-    private String targetUniversity;
     private String mentorName;
     private int totalTodos;
     private int completedTodos;

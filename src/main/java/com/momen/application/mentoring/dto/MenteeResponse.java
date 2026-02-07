@@ -14,7 +14,6 @@ public class MenteeResponse {
     private String name;
     private String profileImageUrl;
     private String grade;
-    private String targetUniversity;
     private List<String> cards;
     private List<String> subjects;
     private String cheerMessage;
@@ -26,7 +25,6 @@ public class MenteeResponse {
                 .name(mentee.getUser().getName())
                 .profileImageUrl(mentee.getUser().getProfileImageUrl())
                 .grade(mentee.getGrade())
-                .targetUniversity(mentee.getTargetUniversity())
                 .cards(mentee.getCards())
                 .subjects(mentee.getSubjects())
                 .cheerMessage(mentee.getCheerMessage())

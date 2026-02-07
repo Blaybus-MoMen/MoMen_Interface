@@ -32,10 +32,10 @@ public class MentoringService {
     }
 
     @Transactional
-    public Long registerMentee(Long userId, String grade, String targetUniv) {
+    public Long registerMentee(Long userId, String grade) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Mentee mentee = new Mentee(user, null, grade, targetUniv);
+        Mentee mentee = new Mentee(user, null, grade);
         return menteeRepository.save(mentee).getId();
     }
 
