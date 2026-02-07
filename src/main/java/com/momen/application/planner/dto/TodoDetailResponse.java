@@ -41,6 +41,10 @@ public class TodoDetailResponse {
         }
     }
 
+    public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials) {
+        return from(todo, materials, false);
+    }
+
     public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials, boolean hasFeedback) {
         return TodoDetailResponse.builder()
                 .todoId(todo.getId())

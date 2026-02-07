@@ -21,6 +21,19 @@ public class TodoSummaryResponse {
     private Boolean mentorConfirmed;
     private boolean hasFeedback;
 
+    public static TodoSummaryResponse from(Todo todo) {
+        return TodoSummaryResponse.builder()
+                .todoId(todo.getId())
+                .title(todo.getTitle())
+                .subject(todo.getSubject())
+                .goalDescription(todo.getGoalDescription())
+                .startDate(todo.getStartDate())
+                .endDate(todo.getEndDate())
+                .repeatDays(parseRepeatDays(todo.getRepeatDays()))
+                .mentorConfirmed(todo.getMentorConfirmed())
+                .build();
+    }
+
     public static TodoSummaryResponse from(Todo todo, boolean hasFeedback) {
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())

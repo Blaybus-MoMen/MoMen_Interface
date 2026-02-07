@@ -59,4 +59,19 @@ public class MentoringService {
         }
         return MenteeResponse.from(mentee);
     }
+
+    // 멘티 본인 정보 조회
+    public MenteeResponse getMyMenteeInfo(Long userId) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        return MenteeResponse.from(mentee);
+    }
+
+    // 멘티 응원메세지 수정
+    @Transactional
+    public void updateCheerMessage(Long userId, String cheerMessage) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        mentee.updateCheerMessage(cheerMessage);
+    }
 }
