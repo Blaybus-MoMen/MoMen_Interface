@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SseEmitterManager {
 
-    private static final long TIMEOUT = 5 * 60 * 1000L; // 5분
+    private static final long TIMEOUT = 60 * 60 * 1000L; // 1시간
     private final ConcurrentHashMap<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     public SseEmitter createEmitter(Long userId) {
