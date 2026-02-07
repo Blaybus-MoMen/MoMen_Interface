@@ -62,12 +62,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // Request Header에서 JWT 추출
+    // Request Header 또는 Query Parameter에서 JWT 추출
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
 
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+
+        // SSE EventSource는 커스텀 헤더를 지원하지 않으므로 query param 폴백
+        String token = request.getParameter("token");
+        if (StringUtils.hasText(token)) {
+            return token;
         }
 
         return null;
