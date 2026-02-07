@@ -8,7 +8,6 @@ import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.AssignmentMaterialRepository;
-import com.momen.infrastructure.jpa.planner.TodoFeedbackRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private final TodoRepository todoRepository;
-    private final TodoFeedbackRepository todoFeedbackRepository;
     private final AssignmentMaterialRepository materialRepository;
     private final MenteeRepository menteeRepository;
     private final MentorRepository mentorRepository;
@@ -162,8 +160,9 @@ public class TodoService {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndDate(menteeId, date);
-        return toSummaryWithFeedbackFlag(todos);
+        return todoRepository.findByMenteeIdAndDate(menteeId, date).stream()
+                .map(TodoSummaryResponse::from)
+                .collect(Collectors.toList());
     }
 
     // 멘티의 월별 Todo 조회 (멘토용)
@@ -175,19 +174,9 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, start, end);
-        return toSummaryWithFeedbackFlag(todos);
-    }
-
-    // 멘티의 주별 Todo 조회 (멘토용)
-    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate) {
-        mentorRepository.findByUserId(mentorUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
-
-        LocalDate weekEnd = weekStartDate.plusDays(6);
-
-        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(menteeId, weekStartDate, weekEnd);
-        return toSummaryWithFeedbackFlag(todos);
+        return todoRepository.findByMenteeIdAndMonth(menteeId, start, end).stream()
+                .map(TodoSummaryResponse::from)
+                .collect(Collectors.toList());
     }
 
     // Todo 상세 조회
@@ -196,8 +185,7 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
         List<AssignmentMaterial> materials = materialRepository.findByTodoId(todoId);
-        boolean hasFeedback = todoFeedbackRepository.existsByTodoId(todoId);
-        return TodoDetailResponse.from(todo, materials, hasFeedback);
+        return TodoDetailResponse.from(todo, materials);
     }
 
     // ==================== 멘티용 API ====================
@@ -207,8 +195,9 @@ public class TodoService {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
-        return toSummaryWithFeedbackFlag(todos);
+        return todoRepository.findByMenteeIdAndDate(mentee.getId(), date).stream()
+                .map(TodoSummaryResponse::from)
+                .collect(Collectors.toList());
     }
 
     // 본인 월별 Todo 조회
@@ -220,28 +209,38 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
-        return toSummaryWithFeedbackFlag(todos);
+        return todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end).stream()
+                .map(TodoSummaryResponse::from)
+                .collect(Collectors.toList());
     }
 
-    // 본인 주별 Todo 조회
-    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate) {
-        Mentee mentee = menteeRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
-
-        LocalDate weekEnd = weekStartDate.plusDays(6);
-
-        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), weekStartDate, weekEnd);
-        return toSummaryWithFeedbackFlag(todos);
-    }
-
-    // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함) 
+    // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함) 멘티화면 리스트 보여주는거
     public List<TodoDetailResponse> getMyTodoCardsByDate(Long userId, LocalDate date) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
         return toDetailResponseList(todos);
+    }
+
+    /** 당일(또는 지정 날짜) 학습 통계: 총 학습, 완료된 학습, 남은 학습. 홈 프로그레스바용 */
+    public StudyDailyStatsResponse getDailyStats(Long userId, LocalDate date) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        int total = todos.size();
+        int completed = (int) todos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
+        int remaining = total - completed;
+        double rate = total > 0 ? (double) completed / total * 100.0 : 0.0;
+
+        return StudyDailyStatsResponse.builder()
+                .date(date)
+                .total(total)
+                .completed(completed)
+                .remaining(remaining)
+                .completionRatePercent(Math.round(rate * 10.0) / 10.0)
+                .build();
     }
 
     /** 카드 UI용: 월별 Todo 배열 (진행상태, 학습지 포함) */
@@ -294,18 +293,5 @@ public class TodoService {
         if (request.getStudyTime() != null) {
             todo.updateStudyTime(request.getStudyTime());
         }
-    }
-
-    // ==================== 공통 ====================
-
-    private List<TodoSummaryResponse> toSummaryWithFeedbackFlag(List<Todo> todos) {
-        if (todos.isEmpty()) return List.of();
-
-        List<Long> todoIds = todos.stream().map(Todo::getId).toList();
-        Set<Long> feedbackTodoIds = new HashSet<>(todoFeedbackRepository.findTodoIdsWithFeedback(todoIds));
-
-        return todos.stream()
-                .map(todo -> TodoSummaryResponse.from(todo, feedbackTodoIds.contains(todo.getId())))
-                .collect(Collectors.toList());
     }
 }
