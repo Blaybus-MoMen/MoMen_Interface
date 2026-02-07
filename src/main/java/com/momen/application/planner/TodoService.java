@@ -133,6 +133,13 @@ public class TodoService {
                     request.getEndDate()
             );
         }
+
+        if (request.getMaterials() != null) {
+            materialRepository.deleteByTodoId(todoId);
+            for (TodoUpdateRequest.MaterialInfo m : request.getMaterials()) {
+                materialRepository.save(new AssignmentMaterial(todo, m.getFileUrl(), m.getFileName()));
+            }
+        }
     }
 
     // Todo 삭제 (멘토용 - 멘토가 생성한 할일만)
