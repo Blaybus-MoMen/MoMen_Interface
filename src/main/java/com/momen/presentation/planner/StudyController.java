@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import static java.time.LocalDate.now;
+
 @Tag(name = "Study", description = "학습 과제 및 오답노트 API (멘티용)")
 @RestController
 @RequestMapping("/api/v1/study")
@@ -86,6 +88,15 @@ public class StudyController {
             @RequestBody TodoUpdateRequest request) {
         todoService.updateTodoByMentee(userId, todoId, request);
         return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @Operation(summary = "당일 학습 통계", description = "오늘(또는 지정 날짜) 하루의 총 학습·완료·남은 개수와 완료율을 조회합니다. 홈 프로그레스바용.")
+    @GetMapping("/daily-stats")
+    public ResponseEntity<ApiResponse<StudyDailyStatsResponse>> getDailyStats(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "조회할 날짜 (미입력 시 오늘)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        LocalDate targetDate = date != null ? date : now();
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getDailyStats(userId, targetDate)));
     }
 
     // ==================== 과제 제출 ====================
