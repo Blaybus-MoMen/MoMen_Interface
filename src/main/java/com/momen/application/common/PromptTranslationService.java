@@ -1,7 +1,6 @@
 package com.momen.application.common;
 
-import com.momen.infrastructure.external.openai.OpenAiClient;
-import com.momen.infrastructure.external.openai.dto.ChatCompletionResponse;
+import com.momen.infrastructure.external.ai.AiClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class PromptTranslationService {
 
-    private final OpenAiClient openAiClient;
+    private final AiClient aiClient;
 
     // 한글 문자 패턴 (한글, 한자 포함)
     private static final Pattern KOREAN_PATTERN = Pattern.compile(".*[\\uAC00-\\uD7A3\\u4E00-\\u9FFF].*");
@@ -51,28 +50,20 @@ public class PromptTranslationService {
                     Only return the translated English text, without any additional explanation or quotation marks.
                     """;
 
-            ChatCompletionResponse response = openAiClient.createChatCompletion(
-                    systemPrompt,
-                    koreanPrompt,
-                    "gpt-4o-mini",  // 경량 모델 사용
-                    0.3             // 일관성을 위해 낮은 temperature
-            );
+            String translated = aiClient.chat(systemPrompt, koreanPrompt);
 
-            if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
-                log.warn("Translation failed: OpenAI API returned empty response. Using original prompt.");
-                return koreanPrompt; // 번역 실패 시 원본 반환
+            if (translated == null || translated.isBlank()) {
+                log.warn("Translation failed: AI API returned empty response. Using original prompt.");
+                return koreanPrompt;
             }
 
-            String translated = response.getChoices().get(0).getMessage().getContent().trim();
-            
-            // Mock 응답 감지 (OpenAI API 키가 없을 때)
-            if (translated.contains("Mock response") || translated.contains("test response") || 
-                translated.contains("OpenAI API key is not configured")) {
-                log.warn("⚠️ OpenAI API 키가 설정되지 않아 Mock 응답을 받았습니다. 원본 프롬프트를 그대로 사용합니다.");
-                log.warn("   원본 프롬프트: {}", koreanPrompt);
-                return koreanPrompt; // Mock 응답 대신 원본 반환
+            // Mock 응답 감지 (API 키가 없을 때)
+            if (translated.contains("Mock response") || translated.contains("test response") ||
+                translated.contains("API key is not configured")) {
+                log.warn("AI API 키가 설정되지 않아 Mock 응답을 받았습니다. 원본 프롬프트를 그대로 사용합니다.");
+                return koreanPrompt;
             }
-            
+
             // 따옴표 제거 (GPT가 따옴표로 감싸서 반환하는 경우)
             if (translated.startsWith("\"") && translated.endsWith("\"")) {
                 translated = translated.substring(1, translated.length() - 1);
@@ -86,7 +77,6 @@ public class PromptTranslationService {
 
         } catch (Exception e) {
             log.error("Error translating prompt: {}", e.getMessage(), e);
-            // 번역 실패 시 원본 반환 (영어로만 시도)
             return koreanPrompt;
         }
     }
@@ -104,4 +94,3 @@ public class PromptTranslationService {
         return prompt;
     }
 }
-
