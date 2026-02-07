@@ -82,7 +82,7 @@ public class StudyController {
 
     // ==================== 과제 제출 ====================
 
-    @Operation(summary = "과제 제출", description = "할일에 대한 과제를 제출합니다. AI Vision 자동 검수가 시작됩니다")
+    @Operation(summary = "학습 점검하기 (과제 제출 + 학습 완료)", description = "파일·텍스트(메모)를 제출하면 해당 할일이 학습 완료로 표시됩니다. 파일 첨부 시 AI Vision 자동 검수가 진행됩니다.")
     @PostMapping("/todos/{todoId}/submit")
     public ResponseEntity<ApiResponse<Long>> submitAssignment(
             @RequestAttribute("userId") Long userId,
