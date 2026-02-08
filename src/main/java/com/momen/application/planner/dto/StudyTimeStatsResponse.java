@@ -8,24 +8,28 @@ import java.util.Map;
 @Getter
 @Builder
 public class StudyTimeStatsResponse {
-    private int totalHours;
-    private int totalMinutes;
-    private int totalSeconds;
+    private String totalHours;
+    private String totalMinutes;
+    private String totalSeconds;
     private Map<String, StudyTimeDetail> subjectStudyTime;
 
     @Getter
     @Builder
     public static class StudyTimeDetail {
-        private int hours;
-        private int minutes;
-        private int seconds;
+        private String hours;
+        private String minutes;
+        private String seconds;
 
         public static StudyTimeDetail fromSeconds(int totalSec) {
             return StudyTimeDetail.builder()
-                    .hours(totalSec / 3600)
-                    .minutes((totalSec % 3600) / 60)
-                    .seconds(totalSec % 60)
+                    .hours(fmt(totalSec / 3600))
+                    .minutes(fmt((totalSec % 3600) / 60))
+                    .seconds(fmt(totalSec % 60))
                     .build();
         }
+
+        private static String fmt(int v) { return String.format("%02d", v); }
     }
+
+    private static String fmt(int v) { return String.format("%02d", v); }
 }

@@ -74,4 +74,12 @@ public class MentoringService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
         mentee.updateCheerMessage(cheerMessage);
     }
+
+    // 멘티 특징 카드 수정
+    @Transactional
+    public void updateCards(Long userId, List<String> cards) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        mentee.updateCards(cards);
+    }
 }

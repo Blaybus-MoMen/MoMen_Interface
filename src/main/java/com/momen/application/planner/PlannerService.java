@@ -60,15 +60,17 @@ public class PlannerService {
 
         return MypageResponse.builder()
                 .name(mentee.getUser().getName())
+                .profileImageUrl(mentee.getUser().getProfileImageUrl())
                 .grade(mentee.getGrade())
                 .mentorName(mentorName)
+                .cards(mentee.getCards())
                 .totalTodos(totalTodos)
                 .completedTodos(completedTodos)
                 .overallCompletionRate(overallRate)
                 .subjectCompletionRates(subjectRates)
-                .totalStudyHours(totalSec / 3600)
-                .totalStudyMinutes((totalSec % 3600) / 60)
-                .totalStudySeconds(totalSec % 60)
+                .totalStudyHours(String.format("%02d", totalSec / 3600))
+                .totalStudyMinutes(String.format("%02d", (totalSec % 3600) / 60))
+                .totalStudySeconds(String.format("%02d", totalSec % 60))
                 .daysWithUs(ChronoUnit.DAYS.between(mentee.getCreateDt().toLocalDate(), LocalDate.now()) + 1)
                 .build();
     }

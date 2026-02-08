@@ -54,4 +54,12 @@ public class Mentee extends BaseTimeEntity {
     public void updateCheerMessage(String cheerMessage) {
         this.cheerMessage = cheerMessage;
     }
+
+    public void updateCards(List<String> cards) {
+        if (cards.size() > 3) {
+            throw new IllegalArgumentException("특징 카드는 최대 3개까지 선택 가능합니다");
+        }
+        this.cards.clear();
+        this.cards.addAll(cards);
+    }
 }

@@ -75,8 +75,8 @@ public class Todo extends BaseTimeEntity {
         this.isCompleted = false;
     }
 
-    public void updateStudyTime(Integer studyTime) {
-        this.studyTime = studyTime;
+    public void addStudyTime(int seconds) {
+        this.studyTime = (this.studyTime != null ? this.studyTime : 0) + seconds;
     }
 
     public void updateContent(String title, String subject, String goalDescription,
