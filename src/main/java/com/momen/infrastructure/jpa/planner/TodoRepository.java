@@ -37,4 +37,10 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     @Query("SELECT t FROM Todo t JOIN FETCH t.mentee m JOIN FETCH m.user " +
            "WHERE t.startDate <= :date AND t.endDate >= :date AND t.isCompleted = false")
     List<Todo> findIncompleteByDateWithMenteeAndUser(@Param("date") LocalDate date);
+
+    // 주별 조회: 해당 주와 겹치는 todo
+    @Query("SELECT t FROM Todo t WHERE t.mentee.id = :menteeId AND t.startDate <= :endOfWeek AND t.endDate >= :startOfWeek")
+    List<Todo> findByMenteeIdAndWeek(@Param("menteeId") Long menteeId,
+                                      @Param("startOfWeek") LocalDate startOfWeek,
+                                      @Param("endOfWeek") LocalDate endOfWeek);
 }
