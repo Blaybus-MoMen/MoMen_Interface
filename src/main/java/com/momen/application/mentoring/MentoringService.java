@@ -44,7 +44,7 @@ public class MentoringService {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
         return menteeRepository.findByMentorId(mentor.getId()).stream()
-                .map(MenteeResponse::from)
+                .map(MenteeResponse::fromForMentor)
                 .collect(Collectors.toList());
     }
 
@@ -57,7 +57,7 @@ public class MentoringService {
         if (!mentee.getMentor().getId().equals(mentor.getId())) {
             throw new IllegalArgumentException("해당 멘티는 담당 멘티가 아닙니다");
         }
-        return MenteeResponse.from(mentee);
+        return MenteeResponse.fromForMentor(mentee);
     }
 
     // 멘티 본인 정보 조회
