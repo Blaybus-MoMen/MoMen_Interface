@@ -414,9 +414,9 @@ public class TodoService {
         todoRepository.delete(todo);
     }
 
-    // Todo별 학습 시간 수정
+    // Todo별 학습 시간 추가 (타이머 측정값 누적)
     @Transactional
-    public void updateStudyTime(Long userId, Long todoId, int studyTime) {
+    public void addStudyTime(Long userId, Long todoId, int seconds) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
@@ -427,7 +427,7 @@ public class TodoService {
             throw new IllegalArgumentException("접근 권한이 없습니다");
         }
 
-        todo.updateStudyTime(studyTime);
+        todo.addStudyTime(seconds);
     }
 
     // 학습시간 통계 조회 (일별)

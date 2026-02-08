@@ -116,13 +116,13 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @Operation(summary = "Todo 학습 시간 수정", description = "멘티가 특정 할일의 학습 시간(초)을 수정합니다. 타이머 측정값을 초 단위로 전달합니다.")
+    @Operation(summary = "Todo 학습 시간 추가", description = "타이머로 측정한 시간(초)을 기존 학습시간에 누적합니다.")
     @PatchMapping("/todos/{todoId}/study-time")
-    public ResponseEntity<ApiResponse<Void>> updateStudyTime(
+    public ResponseEntity<ApiResponse<Void>> addStudyTime(
             @RequestAttribute("userId") Long userId,
             @PathVariable Long todoId,
             @RequestBody Map<String, Integer> request) {
-        todoService.updateStudyTime(userId, todoId, request.get("studyTime"));
+        todoService.addStudyTime(userId, todoId, request.get("studyTime"));
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
