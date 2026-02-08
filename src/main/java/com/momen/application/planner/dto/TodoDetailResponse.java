@@ -23,6 +23,9 @@ public class TodoDetailResponse {
     private CreatorType creatorType;
     private Boolean isCompleted;
     private boolean hasFeedback;
+    private int studyTimeHours;
+    private int studyTimeMinutes;
+    private int studyTimeSeconds;
     private List<MaterialInfo> materials;
 
     @Getter
@@ -46,6 +49,7 @@ public class TodoDetailResponse {
     }
 
     public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials, boolean hasFeedback) {
+        int totalSec = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
         return TodoDetailResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -57,6 +61,9 @@ public class TodoDetailResponse {
                 .creatorType(todo.getCreatorType())
                 .isCompleted(todo.getIsCompleted())
                 .hasFeedback(hasFeedback)
+                .studyTimeHours(totalSec / 3600)
+                .studyTimeMinutes((totalSec % 3600) / 60)
+                .studyTimeSeconds(totalSec % 60)
                 .materials(materials.stream()
                         .map(MaterialInfo::from)
                         .collect(Collectors.toList()))

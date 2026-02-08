@@ -40,7 +40,7 @@ public class Todo extends BaseTimeEntity {
     private LocalDate endDate;
 
     @Column(name = "study_time")
-    private Integer studyTime; // 공부 시간 (분)
+    private Integer studyTime = 0; // 공부 시간 (초)
 
     @Column(name = "is_completed")
     private Boolean isCompleted = false;

@@ -32,10 +32,10 @@ public class MentoringService {
     }
 
     @Transactional
-    public Long registerMentee(Long userId, String grade, String targetUniv) {
+    public Long registerMentee(Long userId, String grade) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Mentee mentee = new Mentee(user, null, grade, targetUniv);
+        Mentee mentee = new Mentee(user, null, grade);
         return menteeRepository.save(mentee).getId();
     }
 
@@ -44,7 +44,7 @@ public class MentoringService {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
         return menteeRepository.findByMentorId(mentor.getId()).stream()
-                .map(MenteeResponse::from)
+                .map(MenteeResponse::fromForMentor)
                 .collect(Collectors.toList());
     }
 
@@ -57,7 +57,7 @@ public class MentoringService {
         if (!mentee.getMentor().getId().equals(mentor.getId())) {
             throw new IllegalArgumentException("해당 멘티는 담당 멘티가 아닙니다");
         }
-        return MenteeResponse.from(mentee);
+        return MenteeResponse.fromForMentor(mentee);
     }
 
     // 멘티 본인 정보 조회

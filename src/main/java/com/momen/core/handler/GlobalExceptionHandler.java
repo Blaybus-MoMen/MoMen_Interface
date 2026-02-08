@@ -319,14 +319,40 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * IllegalArgumentException 처리 (비즈니스 로직 검증 실패)
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
+        log.warn("IllegalArgumentException at {}: {}", request.getRequestURI(), e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage(), "BAD_REQUEST"));
+    }
+
+    /**
+     * IllegalStateException 처리
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException e, HttpServletRequest request) {
+        log.warn("IllegalStateException at {}: {}", request.getRequestURI(), e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(e.getMessage(), "CONFLICT"));
+    }
+
+    /**
      * 기타 예외 처리
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleException(Exception e, HttpServletRequest request) {
+        log.error("Unhandled exception at {}: {}", request.getRequestURI(), e.getMessage(), e);
 
         ErrorResponse errorResponse = ErrorResponse.of(
                 ErrorCode.INTERNAL_SERVER_ERROR,
-                request.getRequestURI()
+                request.getRequestURI(),
+                e.getMessage()
         );
 
         return ResponseEntity

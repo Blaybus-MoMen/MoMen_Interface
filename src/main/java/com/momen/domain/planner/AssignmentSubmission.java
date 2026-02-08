@@ -20,36 +20,33 @@ public class AssignmentSubmission extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "todo_id", nullable = false)
+    @JoinColumn(name = "todo_id", nullable = false, unique = true)
     private Todo todo;
 
-    @Column(name = "file_url", length = 500)
-    private String fileUrl;
-
-    @Column(name = "file_name", length = 255)
-    private String fileName;
-
     @Column(name = "memo", columnDefinition = "TEXT")
-    private String memo; // 학습 점검 텍스트 (메모)
+    private String memo;
 
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
-    // [NEW] AI Vision 분석 결과
+    // AI Vision 분석 결과
     @Enumerated(EnumType.STRING)
     @Column(name = "ai_analysis_status", length = 20)
     private AnalysisStatus aiAnalysisStatus = AnalysisStatus.PENDING;
 
     @Column(name = "study_density_score")
-    private Integer studyDensityScore; // 필기 밀도 (0~100)
+    private Integer studyDensityScore;
 
     @Column(name = "ai_check_comment", columnDefinition = "TEXT")
-    private String aiCheckComment; // AI 자동 검수 코멘트
+    private String aiCheckComment;
 
-    public AssignmentSubmission(Todo todo, String fileUrl, String fileName, String memo) {
+    public AssignmentSubmission(Todo todo, String memo) {
         this.todo = todo;
-        this.fileUrl = fileUrl;
-        this.fileName = fileName;
+        this.memo = memo;
+        this.submittedAt = LocalDateTime.now();
+    }
+
+    public void updateContent(String memo) {
         this.memo = memo;
         this.submittedAt = LocalDateTime.now();
     }
