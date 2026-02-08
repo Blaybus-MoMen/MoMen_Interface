@@ -172,17 +172,18 @@ public class TodoService {
     }
 
     // 멘티의 일별 Todo 조회 (멘토용)
-    public List<TodoSummaryResponse> getTodosForMenteeByDate(Long mentorUserId, Long menteeId, LocalDate date) {
+    public List<TodoSummaryResponse> getTodosForMenteeByDate(Long mentorUserId, Long menteeId, LocalDate date, List<String> subjects) {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        return todoRepository.findByMenteeIdAndDate(menteeId, date).stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndDateAndSubjects(menteeId, date, subjects)
+                : todoRepository.findByMenteeIdAndDate(menteeId, date);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
     // 멘티의 월별 Todo 조회 (멘토용)
-    public List<TodoSummaryResponse> getTodosForMenteeByMonth(Long mentorUserId, Long menteeId, String yearMonth) {
+    public List<TodoSummaryResponse> getTodosForMenteeByMonth(Long mentorUserId, Long menteeId, String yearMonth, List<String> subjects) {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
@@ -190,20 +191,22 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        return todoRepository.findByMenteeIdAndMonth(menteeId, start, end).stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndMonthAndSubjects(menteeId, start, end, subjects)
+                : todoRepository.findByMenteeIdAndMonth(menteeId, start, end);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
     // 멘티의 주별 Todo 조회 (멘토용)
-    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate) {
+    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate, List<String> subjects) {
         mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
         LocalDate end = weekStartDate.plusDays(6);
-        return todoRepository.findByMenteeIdAndWeek(menteeId, weekStartDate, end).stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndWeekAndSubjects(menteeId, weekStartDate, end, subjects)
+                : todoRepository.findByMenteeIdAndWeek(menteeId, weekStartDate, end);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
     // Todo 상세 조회
@@ -217,22 +220,19 @@ public class TodoService {
 
     // ==================== 멘티용 API ====================
 
-    // 본인 일별 Todo 조회 (수강과목 필터링)
-    public List<TodoSummaryResponse> getMyTodosByDate(Long userId, LocalDate date) {
+    // 본인 일별 Todo 조회
+    public List<TodoSummaryResponse> getMyTodosByDate(Long userId, LocalDate date, List<String> subjects) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        List<Todo> todos = mentee.getSubjects().isEmpty()
-                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
-                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
-
-        return todos.stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, subjects)
+                : todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
-    // 본인 월별 Todo 조회 (수강과목 필터링)
-    public List<TodoSummaryResponse> getMyTodosByMonth(Long userId, String yearMonth) {
+    // 본인 월별 Todo 조회
+    public List<TodoSummaryResponse> getMyTodosByMonth(Long userId, String yearMonth, List<String> subjects) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
@@ -240,39 +240,33 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        List<Todo> todos = mentee.getSubjects().isEmpty()
-                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
-                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
-
-        return todos.stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, subjects)
+                : todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
-    // 본인 주별 Todo 조회 (수강과목 필터링)
-    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate) {
+    // 본인 주별 Todo 조회
+    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate, List<String> subjects) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         LocalDate weekEnd = weekStartDate.plusDays(6);
 
-        List<Todo> todos = mentee.getSubjects().isEmpty()
-                ? todoRepository.findByMenteeIdAndWeek(mentee.getId(), weekStartDate, weekEnd)
-                : todoRepository.findByMenteeIdAndWeekAndSubjects(mentee.getId(), weekStartDate, weekEnd, mentee.getSubjects());
-
-        return todos.stream()
-                .map(todo -> TodoSummaryResponse.from(todo, false))
-                .collect(Collectors.toList());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndWeekAndSubjects(mentee.getId(), weekStartDate, weekEnd, subjects)
+                : todoRepository.findByMenteeIdAndWeek(mentee.getId(), weekStartDate, weekEnd);
+        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
     }
 
-    // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함) 멘티화면 리스트 보여주는거
-    public List<TodoDetailResponse> getMyTodoCardsByDate(Long userId, LocalDate date) {
+    // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함)
+    public List<TodoDetailResponse> getMyTodoCardsByDate(Long userId, LocalDate date, List<String> subjects) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        List<Todo> todos = mentee.getSubjects().isEmpty()
-                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
-                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, subjects)
+                : todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
         return toDetailResponseList(todos);
     }
 
@@ -299,16 +293,16 @@ public class TodoService {
     }
 
     /** 카드 UI용: 월별 Todo 배열 (진행상태, 학습지 포함) */
-    public List<TodoDetailResponse> getMyTodoCardsByMonth(Long userId, String yearMonth) {
+    public List<TodoDetailResponse> getMyTodoCardsByMonth(Long userId, String yearMonth, List<String> subjects) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         YearMonth ym = YearMonth.parse(yearMonth);
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
-        List<Todo> todos = mentee.getSubjects().isEmpty()
-                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
-                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
+        List<Todo> todos = hasSubjects(subjects)
+                ? todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, subjects)
+                : todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
         return toDetailResponseList(todos);
     }
 
@@ -496,5 +490,9 @@ public class TodoService {
                 .totalSeconds(totalSec % 60)
                 .subjectStudyTime(subjectStudyTime)
                 .build();
+    }
+
+    private boolean hasSubjects(List<String> subjects) {
+        return subjects != null && !subjects.isEmpty();
     }
 }
