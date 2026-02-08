@@ -18,6 +18,7 @@ public class TodoSummaryResponse {
     private LocalDate endDate;
     private Boolean mentorConfirmed;
     private CreatorType creatorType;
+    private Boolean isCompleted;
     private boolean hasFeedback;
     private String studyTimeHours;
     private String studyTimeMinutes;
@@ -36,6 +37,7 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
+                .isCompleted(todo.getIsCompleted())
                 .studyTimeHours(fmt(s / 3600))
                 .studyTimeMinutes(fmt((s % 3600) / 60))
                 .studyTimeSeconds(fmt(s % 60))
@@ -53,6 +55,7 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
+                .isCompleted(todo.getIsCompleted())
                 .hasFeedback(hasFeedback)
                 .studyTimeHours(fmt(s / 3600))
                 .studyTimeMinutes(fmt((s % 3600) / 60))
