@@ -212,6 +212,15 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @Operation(summary = "특징 카드 수정", description = "멘티가 본인의 특징 카드를 수정합니다 (최대 3개)")
+    @PatchMapping("/me/cards")
+    public ResponseEntity<ApiResponse<Void>> updateCards(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody Map<String, List<String>> request) {
+        mentoringService.updateCards(userId, request.get("cards"));
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     // ==================== 마이페이지 ====================
 
     @Operation(summary = "마이페이지 조회", description = "멘티의 프로필, 성취율, 과목별 완료율을 조회합니다")
