@@ -2,11 +2,10 @@ package com.momen.presentation.planner;
 
 import com.momen.application.mentoring.MentoringService;
 import com.momen.application.mentoring.dto.MenteeResponse;
-import com.momen.application.planner.AssignmentService;
-import com.momen.application.planner.MistakeNoteService;
-import com.momen.application.planner.PlannerService;
-import com.momen.application.planner.TodoService;
+import com.momen.application.planner.*;
 import com.momen.application.planner.dto.*;
+import com.momen.domain.mentoring.Mentee;
+import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.core.dto.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +34,10 @@ public class StudyController {
     private final TodoService todoService;
     private final PlannerService plannerService;
     private final MentoringService mentoringService;
+    private final TodoFeedbackService todoFeedbackService;
+    private final WeeklyFeedbackService weeklyFeedbackService;
+    private final MonthlyFeedbackService monthlyFeedbackService;
+    private final MenteeRepository menteeRepository;
 
     // ==================== Todo 조회 (멘티용) ====================
 
@@ -113,14 +116,40 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @Operation(summary = "Todo 완료/공부시간 기록", description = "멘티가 할일 완료 처리 및 공부 시간을 기록합니다")
-    @PatchMapping("/todos/{todoId}")
-    public ResponseEntity<ApiResponse<Void>> updateMyTodo(
+    @Operation(summary = "Todo 학습 시간 수정", description = "멘티가 특정 할일의 학습 시간(초)을 수정합니다. 타이머 측정값을 초 단위로 전달합니다.")
+    @PatchMapping("/todos/{todoId}/study-time")
+    public ResponseEntity<ApiResponse<Void>> updateStudyTime(
             @RequestAttribute("userId") Long userId,
             @PathVariable Long todoId,
-            @RequestBody TodoUpdateRequest request) {
-        todoService.updateTodoByMentee(userId, todoId, request);
+            @RequestBody Map<String, Integer> request) {
+        todoService.updateStudyTime(userId, todoId, request.get("studyTime"));
         return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    // ==================== 학습시간 통계 ====================
+
+    @Operation(summary = "학습시간 통계 (일별)", description = "특정 날짜의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "date")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByDate(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByDate(userId, date)));
+    }
+
+    @Operation(summary = "학습시간 통계 (주별)", description = "특정 주의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "weekStartDate")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByWeek(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByWeek(userId, weekStartDate)));
+    }
+
+    @Operation(summary = "학습시간 통계 (월별)", description = "특정 월의 총 학습시간과 과목별 학습시간을 조회합니다")
+    @GetMapping(value = "/study-time", params = "yearMonth")
+    public ResponseEntity<ApiResponse<StudyTimeStatsResponse>> getStudyTimeByMonth(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getStudyTimeStatsByMonth(userId, yearMonth)));
     }
 
     @Operation(summary = "당일 학습 통계", description = "오늘(또는 지정 날짜) 하루의 총 학습·완료·남은 개수와 완료율을 조회합니다. 홈 프로그레스바용.")
@@ -134,27 +163,20 @@ public class StudyController {
 
     // ==================== 과제 제출 ====================
 
-    @Operation(summary = "학습 점검하기 (과제 제출 + 학습 완료)", description = "파일·텍스트(메모)를 제출하면 해당 할일이 학습 완료로 표시됩니다. 파일 첨부 시 AI Vision 자동 검수가 진행됩니다.")
+    @Operation(summary = "과제 제출/수정", description = "파일·텍스트(메모)를 제출합니다. 기존 제출이 있으면 수정됩니다. Todo당 1건만 존재합니다.")
     @PostMapping("/todos/{todoId}/submit")
-    public ResponseEntity<ApiResponse<Long>> submitAssignment(
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> submitAssignment(
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "할 일 ID") @PathVariable Long todoId,
             @RequestBody SubmissionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(assignmentService.submitAssignment(userId, todoId, request)));
     }
 
-    @Operation(summary = "제출물 상세 조회", description = "과제 제출물의 상세 정보와 AI 분석 결과를 조회합니다")
-    @GetMapping("/submissions/{submissionId}")
-    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmission(
-            @Parameter(description = "제출물 ID") @PathVariable Long submissionId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmission(submissionId)));
-    }
-
-    @Operation(summary = "Todo별 제출 목록 조회", description = "특정 할일에 대한 제출 목록을 조회합니다")
-    @GetMapping("/todos/{todoId}/submissions")
-    public ResponseEntity<ApiResponse<List<AssignmentSubmissionResponse>>> getSubmissionsByTodo(
+    @Operation(summary = "Todo별 제출물 조회", description = "특정 할일의 제출물과 첨부파일 목록을 조회합니다")
+    @GetMapping("/todos/{todoId}/submission")
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmissionByTodo(
             @Parameter(description = "할 일 ID") @PathVariable Long todoId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionsByTodo(todoId)));
+        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionByTodo(todoId)));
     }
 
     // ==================== 오답노트 ====================
@@ -191,5 +213,63 @@ public class StudyController {
     @GetMapping("/mypage")
     public ResponseEntity<ApiResponse<MypageResponse>> getMypage(@RequestAttribute("userId") Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(plannerService.getMypage(userId)));
+    }
+
+    // ==================== 피드백 조회 (멘티용 - 토큰 기반) ====================
+
+    @Operation(summary = "Todo 피드백 조회", description = "특정 Todo의 피드백을 조회합니다")
+    @GetMapping("/feedback/todo/{todoId}")
+    public ResponseEntity<ApiResponse<TodoFeedbackResponse>> getMyTodoFeedback(
+            @PathVariable Long todoId) {
+        return ResponseEntity.ok(ApiResponse.ok(todoFeedbackService.getFeedback(todoId)));
+    }
+
+    @Operation(summary = "Todo 피드백 질문 수정", description = "멘티가 질문을 수정합니다")
+    @PatchMapping("/feedback/todo/{todoId}/question")
+    public ResponseEntity<ApiResponse<TodoFeedbackResponse>> updateMyTodoQuestion(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId,
+            @RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(ApiResponse.ok(todoFeedbackService.updateQuestionByMentee(userId, todoId, request.get("question"))));
+    }
+
+    @Operation(summary = "주간 피드백 목록 조회", description = "본인의 주간 피드백을 조회합니다. yearMonth 또는 weekStartDate로 필터링 가능")
+    @GetMapping("/feedback/weekly")
+    public ResponseEntity<ApiResponse<List<WeeklyFeedbackResponse>>> getMyWeeklyFeedbackList(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
+        Long menteeId = getMenteeId(userId);
+        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedbackList(menteeId, yearMonth, weekStartDate)));
+    }
+
+    @Operation(summary = "주간 피드백 단건 조회", description = "주간 피드백을 조회합니다")
+    @GetMapping("/feedback/weekly/{feedbackId}")
+    public ResponseEntity<ApiResponse<WeeklyFeedbackResponse>> getMyWeeklyFeedback(
+            @PathVariable Long feedbackId) {
+        return ResponseEntity.ok(ApiResponse.ok(weeklyFeedbackService.getFeedback(feedbackId)));
+    }
+
+    @Operation(summary = "월간 피드백 목록 조회", description = "본인의 월간 피드백을 조회합니다. yearMonth 또는 year로 필터링 가능")
+    @GetMapping("/feedback/monthly")
+    public ResponseEntity<ApiResponse<List<MonthlyFeedbackResponse>>> getMyMonthlyFeedbackList(
+            @RequestAttribute("userId") Long userId,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "연도") @RequestParam(required = false) Integer year) {
+        Long menteeId = getMenteeId(userId);
+        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedbackList(menteeId, yearMonth, year)));
+    }
+
+    @Operation(summary = "월간 피드백 단건 조회", description = "월간 피드백을 조회합니다")
+    @GetMapping("/feedback/monthly/{feedbackId}")
+    public ResponseEntity<ApiResponse<MonthlyFeedbackResponse>> getMyMonthlyFeedback(
+            @PathVariable Long feedbackId) {
+        return ResponseEntity.ok(ApiResponse.ok(monthlyFeedbackService.getFeedback(feedbackId)));
+    }
+
+    private Long getMenteeId(Long userId) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        return mentee.getId();
     }
 }

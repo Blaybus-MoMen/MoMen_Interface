@@ -30,7 +30,6 @@ public class SignupRequest {
 
     // Mentee 전용
     private String grade;
-    private String targetUniversity;
 
     public boolean isMentor() {
         return "MENTOR".equals(role);

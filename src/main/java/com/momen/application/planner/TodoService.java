@@ -287,14 +287,14 @@ public class TodoService {
         int total = todos.size();
         int completed = (int) todos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
         int remaining = total - completed;
-        double rate = total > 0 ? (double) completed / total * 100.0 : 0.0;
+        int rate = total > 0 ? (int) Math.round((double) completed / total * 100.0) : 0;
 
         return StudyDailyStatsResponse.builder()
                 .date(date)
                 .total(total)
                 .completed(completed)
                 .remaining(remaining)
-                .completionRatePercent(Math.round(rate * 10.0) / 10.0)
+                .completionRatePercent(rate)
                 .build();
     }
 
@@ -385,6 +385,13 @@ public class TodoService {
                     request.getEndDate()
             );
         }
+
+        if (request.getMaterials() != null) {
+            materialRepository.deleteByTodoId(todoId);
+            for (TodoUpdateRequest.MaterialInfo m : request.getMaterials()) {
+                materialRepository.save(new AssignmentMaterial(todo, m.getFileUrl(), m.getFileName()));
+            }
+        }
     }
 
     // Todo 삭제 (멘티용 - 멘티가 생성한 할일만)
@@ -407,9 +414,9 @@ public class TodoService {
         todoRepository.delete(todo);
     }
 
-    // Todo 완료 처리 / 공부 시간 기록 (멘티용)
+    // Todo별 학습 시간 수정
     @Transactional
-    public void updateTodoByMentee(Long userId, Long todoId, TodoUpdateRequest request) {
+    public void updateStudyTime(Long userId, Long todoId, int studyTime) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
@@ -420,16 +427,74 @@ public class TodoService {
             throw new IllegalArgumentException("접근 권한이 없습니다");
         }
 
-        if (request.getIsCompleted() != null) {
-            if (Boolean.TRUE.equals(request.getIsCompleted())) {
-                todo.complete();
-            } else {
-                todo.uncomplete();
-            }
-        }
+        todo.updateStudyTime(studyTime);
+    }
 
-        if (request.getStudyTime() != null) {
-            todo.updateStudyTime(request.getStudyTime());
-        }
+    // 학습시간 통계 조회 (일별)
+    public StudyTimeStatsResponse getStudyTimeStatsByDate(Long userId, LocalDate date) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
+                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    // 학습시간 통계 조회 (주별)
+    public StudyTimeStatsResponse getStudyTimeStatsByWeek(Long userId, LocalDate weekStartDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        LocalDate weekEnd = weekStartDate.plusDays(6);
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), weekStartDate, weekEnd)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), weekStartDate, weekEnd, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    // 학습시간 통계 조회 (월별)
+    public StudyTimeStatsResponse getStudyTimeStatsByMonth(Long userId, String yearMonth) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
+
+        return buildStudyTimeStats(todos);
+    }
+
+    private StudyTimeStatsResponse buildStudyTimeStats(List<Todo> todos) {
+        int totalSec = todos.stream()
+                .filter(t -> t.getStudyTime() != null)
+                .mapToInt(Todo::getStudyTime)
+                .sum();
+
+        Map<String, StudyTimeStatsResponse.StudyTimeDetail> subjectStudyTime = todos.stream()
+                .filter(t -> t.getStudyTime() != null)
+                .collect(Collectors.groupingBy(
+                        Todo::getSubject,
+                        Collectors.summingInt(Todo::getStudyTime)
+                ))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> StudyTimeStatsResponse.StudyTimeDetail.fromSeconds(e.getValue())
+                ));
+
+        return StudyTimeStatsResponse.builder()
+                .totalHours(totalSec / 3600)
+                .totalMinutes((totalSec % 3600) / 60)
+                .totalSeconds(totalSec % 60)
+                .subjectStudyTime(subjectStudyTime)
+                .build();
     }
 }

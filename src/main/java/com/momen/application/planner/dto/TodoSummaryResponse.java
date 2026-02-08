@@ -19,8 +19,12 @@ public class TodoSummaryResponse {
     private Boolean mentorConfirmed;
     private CreatorType creatorType;
     private boolean hasFeedback;
+    private int studyTimeHours;
+    private int studyTimeMinutes;
+    private int studyTimeSeconds;
 
     public static TodoSummaryResponse from(Todo todo) {
+        int totalSec = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -30,10 +34,14 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
+                .studyTimeHours(totalSec / 3600)
+                .studyTimeMinutes((totalSec % 3600) / 60)
+                .studyTimeSeconds(totalSec % 60)
                 .build();
     }
 
     public static TodoSummaryResponse from(Todo todo, boolean hasFeedback) {
+        int totalSec = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -44,6 +52,9 @@ public class TodoSummaryResponse {
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
                 .hasFeedback(hasFeedback)
+                .studyTimeHours(totalSec / 3600)
+                .studyTimeMinutes((totalSec % 3600) / 60)
+                .studyTimeSeconds(totalSec % 60)
                 .build();
     }
 }

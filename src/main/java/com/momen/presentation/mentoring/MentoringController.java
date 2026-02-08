@@ -124,10 +124,10 @@ public class MentoringController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getTodoDetail(todoId)));
     }
 
-    @Operation(summary = "Todo별 제출물 조회", description = "특정 할일에 제출된 과제를 조회합니다")
-    @GetMapping("/todos/{todoId}/submissions")
-    public ResponseEntity<ApiResponse<List<AssignmentSubmissionResponse>>> getSubmissions(@PathVariable Long todoId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionsByTodo(todoId)));
+    @Operation(summary = "Todo별 제출물 조회", description = "특정 할일의 제출물과 첨부파일 목록을 조회합니다")
+    @GetMapping("/todos/{todoId}/submission")
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmission(@PathVariable Long todoId) {
+        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionByTodo(todoId)));
     }
 
     // ==================== AI 튜터 ====================

@@ -15,5 +15,4 @@ public class UserUpdateRequest {
 
     // Mentee
     private String grade;
-    private String targetUniversity;
 }
