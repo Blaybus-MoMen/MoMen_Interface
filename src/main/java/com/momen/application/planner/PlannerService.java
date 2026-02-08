@@ -60,8 +60,10 @@ public class PlannerService {
 
         return MypageResponse.builder()
                 .name(mentee.getUser().getName())
+                .profileImageUrl(mentee.getUser().getProfileImageUrl())
                 .grade(mentee.getGrade())
                 .mentorName(mentorName)
+                .cards(mentee.getCards())
                 .totalTodos(totalTodos)
                 .completedTodos(completedTodos)
                 .overallCompletionRate(overallRate)
