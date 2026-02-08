@@ -43,4 +43,11 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     List<Todo> findByMenteeIdAndWeek(@Param("menteeId") Long menteeId,
                                       @Param("startOfWeek") LocalDate startOfWeek,
                                       @Param("endOfWeek") LocalDate endOfWeek);
+
+    // 주별 조회 + 과목 필터
+    @Query("SELECT t FROM Todo t WHERE t.mentee.id = :menteeId AND t.startDate <= :endOfWeek AND t.endDate >= :startOfWeek AND t.subject IN :subjects")
+    List<Todo> findByMenteeIdAndWeekAndSubjects(@Param("menteeId") Long menteeId,
+                                                 @Param("startOfWeek") LocalDate startOfWeek,
+                                                 @Param("endOfWeek") LocalDate endOfWeek,
+                                                 @Param("subjects") List<String> subjects);
 }
