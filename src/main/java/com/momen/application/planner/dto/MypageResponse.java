@@ -18,8 +18,8 @@ public class MypageResponse {
     private int completedTodos;
     private int overallCompletionRate;
     private Map<String, Integer> subjectCompletionRates;
-    private int totalStudyHours;
-    private int totalStudyMinutes;
-    private int totalStudySeconds;
+    private String totalStudyHours;
+    private String totalStudyMinutes;
+    private String totalStudySeconds;
     private long daysWithUs;
 }

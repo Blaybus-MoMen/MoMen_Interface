@@ -68,9 +68,9 @@ public class PlannerService {
                 .completedTodos(completedTodos)
                 .overallCompletionRate(overallRate)
                 .subjectCompletionRates(subjectRates)
-                .totalStudyHours(totalSec / 3600)
-                .totalStudyMinutes((totalSec % 3600) / 60)
-                .totalStudySeconds(totalSec % 60)
+                .totalStudyHours(String.format("%02d", totalSec / 3600))
+                .totalStudyMinutes(String.format("%02d", (totalSec % 3600) / 60))
+                .totalStudySeconds(String.format("%02d", totalSec % 60))
                 .daysWithUs(ChronoUnit.DAYS.between(mentee.getCreateDt().toLocalDate(), LocalDate.now()) + 1)
                 .build();
     }

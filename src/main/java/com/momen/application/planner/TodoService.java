@@ -486,9 +486,9 @@ public class TodoService {
                 ));
 
         return StudyTimeStatsResponse.builder()
-                .totalHours(totalSec / 3600)
-                .totalMinutes((totalSec % 3600) / 60)
-                .totalSeconds(totalSec % 60)
+                .totalHours(String.format("%02d", totalSec / 3600))
+                .totalMinutes(String.format("%02d", (totalSec % 3600) / 60))
+                .totalSeconds(String.format("%02d", totalSec % 60))
                 .subjectStudyTime(subjectStudyTime)
                 .build();
     }
