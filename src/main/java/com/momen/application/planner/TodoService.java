@@ -289,6 +289,7 @@ public class TodoService {
                 .completed(completed)
                 .remaining(remaining)
                 .completionRatePercent(rate)
+                .message(StudyDailyStatsResponse.messageFor(rate))
                 .build();
     }
 
