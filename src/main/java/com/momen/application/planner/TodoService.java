@@ -161,7 +161,7 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
         return todoRepository.findByMenteeIdAndDate(menteeId, date).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -175,7 +175,18 @@ public class TodoService {
         LocalDate end = ym.atEndOfMonth();
 
         return todoRepository.findByMenteeIdAndMonth(menteeId, start, end).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
+                .collect(Collectors.toList());
+    }
+
+    // 멘티의 주별 Todo 조회 (멘토용)
+    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate) {
+        mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        LocalDate end = weekStartDate.plusDays(6);
+        return todoRepository.findByMenteeIdAndWeek(menteeId, weekStartDate, end).stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -185,7 +196,7 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
         List<AssignmentMaterial> materials = materialRepository.findByTodoId(todoId);
-        return TodoDetailResponse.from(todo, materials);
+        return TodoDetailResponse.from(todo, materials, false);
     }
 
     // ==================== 멘티용 API ====================
@@ -196,7 +207,7 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         return todoRepository.findByMenteeIdAndDate(mentee.getId(), date).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -210,7 +221,18 @@ public class TodoService {
         LocalDate end = ym.atEndOfMonth();
 
         return todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
+                .collect(Collectors.toList());
+    }
+
+    // 본인 주별 Todo 조회
+    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        LocalDate end = weekStartDate.plusDays(6);
+        return todoRepository.findByMenteeIdAndWeek(mentee.getId(), weekStartDate, end).stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -265,7 +287,7 @@ public class TodoService {
                 .collect(Collectors.groupingBy(m -> m.getTodo().getId()));
 
         return todos.stream()
-                .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of())))
+                .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of()), false))
                 .collect(Collectors.toList());
     }
 
