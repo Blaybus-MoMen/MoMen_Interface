@@ -2,6 +2,7 @@ package com.momen.presentation.mentoring;
 
 import com.momen.application.mentoring.MentoringChatService;
 import com.momen.application.mentoring.MentoringService;
+import com.momen.application.mentoring.dto.ChatRequest;
 import com.momen.application.mentoring.dto.MenteeResponse;
 import com.momen.application.planner.AssignmentService;
 import com.momen.application.planner.TodoService;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "Mentoring", description = "멘토링 API")
 @RestController
@@ -136,8 +136,7 @@ public class MentoringController {
     @PostMapping("/chat")
     public ResponseEntity<ApiResponse<String>> chatWithAi(
             @RequestAttribute("userId") Long userId,
-            @RequestBody Map<String, String> request) {
-        String message = request.get("message");
-        return ResponseEntity.ok(ApiResponse.ok(chatService.chatWithAiTutor(userId, message)));
+            @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(chatService.chatWithAiTutor(userId, request.getMessage())));
     }
 }
