@@ -13,7 +13,10 @@ public class MypageResponse {
     private String mentorName;
     private int totalTodos;
     private int completedTodos;
-    private double overallCompletionRate;
-    private Map<String, Double> subjectCompletionRates;
+    private int overallCompletionRate;
+    private Map<String, Integer> subjectCompletionRates;
+    private int totalStudyHours;
     private int totalStudyMinutes;
+    private int totalStudySeconds;
+    private long daysWithUs;
 }

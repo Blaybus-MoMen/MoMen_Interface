@@ -16,5 +16,5 @@ public class StudyDailyStatsResponse {
     private int total;
     private int completed;
     private int remaining;
-    private double completionRatePercent;
+    private int completionRatePercent;
 }

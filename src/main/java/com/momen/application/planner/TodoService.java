@@ -287,14 +287,14 @@ public class TodoService {
         int total = todos.size();
         int completed = (int) todos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
         int remaining = total - completed;
-        double rate = total > 0 ? (double) completed / total * 100.0 : 0.0;
+        int rate = total > 0 ? (int) Math.round((double) completed / total * 100.0) : 0;
 
         return StudyDailyStatsResponse.builder()
                 .date(date)
                 .total(total)
                 .completed(completed)
                 .remaining(remaining)
-                .completionRatePercent(Math.round(rate * 10.0) / 10.0)
+                .completionRatePercent(rate)
                 .build();
     }
 
@@ -414,32 +414,6 @@ public class TodoService {
         todoRepository.delete(todo);
     }
 
-    // Todo 완료 처리 / 공부 시간 기록 (멘티용)
-    @Transactional
-    public void updateTodoByMentee(Long userId, Long todoId, TodoUpdateRequest request) {
-        Mentee mentee = menteeRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
-
-        Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
-
-        if (!todo.getMentee().getId().equals(mentee.getId())) {
-            throw new IllegalArgumentException("접근 권한이 없습니다");
-        }
-
-        if (request.getIsCompleted() != null) {
-            if (Boolean.TRUE.equals(request.getIsCompleted())) {
-                todo.complete();
-            } else {
-                todo.uncomplete();
-            }
-        }
-
-        if (request.getStudyTime() != null) {
-            todo.updateStudyTime(request.getStudyTime());
-        }
-    }
-
     // Todo별 학습 시간 수정
     @Transactional
     public void updateStudyTime(Long userId, Long todoId, int studyTime) {
@@ -499,21 +473,28 @@ public class TodoService {
     }
 
     private StudyTimeStatsResponse buildStudyTimeStats(List<Todo> todos) {
-        int totalMinutes = todos.stream()
+        int totalSec = todos.stream()
                 .filter(t -> t.getStudyTime() != null)
                 .mapToInt(Todo::getStudyTime)
                 .sum();
 
-        Map<String, Integer> subjectMinutes = todos.stream()
+        Map<String, StudyTimeStatsResponse.StudyTimeDetail> subjectStudyTime = todos.stream()
                 .filter(t -> t.getStudyTime() != null)
                 .collect(Collectors.groupingBy(
                         Todo::getSubject,
                         Collectors.summingInt(Todo::getStudyTime)
+                ))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> StudyTimeStatsResponse.StudyTimeDetail.fromSeconds(e.getValue())
                 ));
 
         return StudyTimeStatsResponse.builder()
-                .totalStudyMinutes(totalMinutes)
-                .subjectStudyMinutes(subjectMinutes)
+                .totalHours(totalSec / 3600)
+                .totalMinutes((totalSec % 3600) / 60)
+                .totalSeconds(totalSec % 60)
+                .subjectStudyTime(subjectStudyTime)
                 .build();
     }
 }

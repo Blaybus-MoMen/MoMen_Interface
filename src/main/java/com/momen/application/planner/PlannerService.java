@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,10 +36,10 @@ public class PlannerService {
 
         int totalTodos = allTodos.size();
         int completedTodos = (int) allTodos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
-        double overallRate = totalTodos > 0 ? (double) completedTodos / totalTodos * 100.0 : 0.0;
+        int overallRate = totalTodos > 0 ? (int) Math.round((double) completedTodos / totalTodos * 100.0) : 0;
 
-        // 과목별 성취율
-        Map<String, Double> subjectRates = allTodos.stream()
+        // 과목별 성취율 (정수 반올림)
+        Map<String, Integer> subjectRates = allTodos.stream()
                 .collect(Collectors.groupingBy(Todo::getSubject))
                 .entrySet().stream()
                 .collect(Collectors.toMap(
@@ -46,11 +47,11 @@ public class PlannerService {
                         e -> {
                             long total = e.getValue().size();
                             long completed = e.getValue().stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
-                            return total > 0 ? Math.round((double) completed / total * 1000.0) / 10.0 : 0.0;
+                            return total > 0 ? (int) Math.round((double) completed / total * 100.0) : 0;
                         }
                 ));
 
-        int totalMinutes = allTodos.stream()
+        int totalSec = allTodos.stream()
                 .filter(t -> t.getStudyTime() != null)
                 .mapToInt(Todo::getStudyTime)
                 .sum();
@@ -63,9 +64,12 @@ public class PlannerService {
                 .mentorName(mentorName)
                 .totalTodos(totalTodos)
                 .completedTodos(completedTodos)
-                .overallCompletionRate(Math.round(overallRate * 10.0) / 10.0)
+                .overallCompletionRate(overallRate)
                 .subjectCompletionRates(subjectRates)
-                .totalStudyMinutes(totalMinutes)
+                .totalStudyHours(totalSec / 3600)
+                .totalStudyMinutes((totalSec % 3600) / 60)
+                .totalStudySeconds(totalSec % 60)
+                .daysWithUs(ChronoUnit.DAYS.between(mentee.getCreateDt().toLocalDate(), LocalDate.now()) + 1)
                 .build();
     }
 }
