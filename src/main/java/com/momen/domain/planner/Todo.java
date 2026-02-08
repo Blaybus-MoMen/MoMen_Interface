@@ -46,19 +46,17 @@ public class Todo extends BaseTimeEntity {
     private Boolean isCompleted = false;
 
     @Column(name = "created_by", nullable = false)
-    private Long createdBy; // 작성자 ID (멘토 userId)
+    private Long createdBy; // 작성자 ID (userId)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "creator_type", nullable = false, length = 10)
+    private CreatorType creatorType = CreatorType.MENTOR;
 
     @Column(name = "mentor_confirmed")
     private Boolean mentorConfirmed = false; // 멘토 확인 여부
 
-    @Column(name = "repeat_group_id", length = 36)
-    private String repeatGroupId; // 반복 그룹 UUID, nullable
-
-    @Column(name = "repeat_days", length = 100)
-    private String repeatDays; // "MONDAY,WEDNESDAY", nullable
-
     public Todo(Mentee mentee, String title, String subject, String goalDescription,
-                LocalDate startDate, LocalDate endDate, Long createdBy) {
+                LocalDate startDate, LocalDate endDate, Long createdBy, CreatorType creatorType) {
         this.mentee = mentee;
         this.title = title;
         this.subject = subject;
@@ -66,6 +64,7 @@ public class Todo extends BaseTimeEntity {
         this.startDate = startDate;
         this.endDate = endDate;
         this.createdBy = createdBy;
+        this.creatorType = creatorType;
     }
 
     public void complete() {
@@ -91,15 +90,5 @@ public class Todo extends BaseTimeEntity {
 
     public void setMentorConfirmed(boolean confirmed) {
         this.mentorConfirmed = confirmed;
-    }
-
-    public void assignRepeatGroup(String repeatGroupId, String repeatDays) {
-        this.repeatGroupId = repeatGroupId;
-        this.repeatDays = repeatDays;
-    }
-
-    public void detachFromRepeatGroup() {
-        this.repeatGroupId = null;
-        this.repeatDays = null;
     }
 }

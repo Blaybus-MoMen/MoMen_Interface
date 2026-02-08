@@ -1,12 +1,15 @@
 package com.momen.application.planner;
 
+import com.momen.application.notification.NotificationService;
 import com.momen.application.planner.dto.MonthlyAiSummaryRequest;
 import com.momen.application.planner.dto.MonthlyFeedbackRequest;
 import com.momen.application.planner.dto.MonthlyFeedbackResponse;
 import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
+import com.momen.domain.notification.NotificationType;
 import com.momen.domain.planner.MonthlyFeedback;
 import com.momen.domain.planner.WeeklyFeedback;
+import com.momen.domain.user.User;
 import com.momen.infrastructure.external.ai.AiClient;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
@@ -30,6 +33,7 @@ public class MonthlyFeedbackService {
     private final MentorRepository mentorRepository;
     private final MenteeRepository menteeRepository;
     private final AiClient aiClient;
+    private final NotificationService notificationService;
 
     // AI 요약 생성 (해당 월 달력의 주간피드백들 조회 → AI 요약)
     public String generateAiSummary(Long mentorUserId, Long menteeId, MonthlyAiSummaryRequest request) {
@@ -66,6 +70,13 @@ public class MonthlyFeedbackService {
                 ));
 
         feedback.update(request.getAiSummary(), request.getMentorComment());
+
+        // 멘티에게 월간 피드백 알림 전송
+        User menteeUser = mentee.getUser();
+        String message = String.format("%d년 %d월 월간 피드백이 등록되었습니다.",
+                request.getYear(), request.getMonth());
+        notificationService.createAndPush(menteeUser, message, NotificationType.MONTHLY_FEEDBACK, feedback.getId());
+
         return MonthlyFeedbackResponse.from(feedback);
     }
 

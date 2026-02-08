@@ -1,6 +1,7 @@
 package com.momen.application.planner.dto;
 
 import com.momen.domain.planner.AssignmentMaterial;
+import com.momen.domain.planner.CreatorType;
 import com.momen.domain.planner.Todo;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,8 +19,8 @@ public class TodoDetailResponse {
     private String goalDescription;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String repeatDays;
     private Boolean mentorConfirmed;
+    private CreatorType creatorType;
     private Boolean isCompleted;
     private boolean hasFeedback;
     private List<MaterialInfo> materials;
@@ -40,6 +41,10 @@ public class TodoDetailResponse {
         }
     }
 
+    public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials) {
+        return from(todo, materials, false);
+    }
+
     public static TodoDetailResponse from(Todo todo, List<AssignmentMaterial> materials, boolean hasFeedback) {
         return TodoDetailResponse.builder()
                 .todoId(todo.getId())
@@ -48,8 +53,8 @@ public class TodoDetailResponse {
                 .goalDescription(todo.getGoalDescription())
                 .startDate(todo.getStartDate())
                 .endDate(todo.getEndDate())
-                .repeatDays(todo.getRepeatDays())
                 .mentorConfirmed(todo.getMentorConfirmed())
+                .creatorType(todo.getCreatorType())
                 .isCompleted(todo.getIsCompleted())
                 .hasFeedback(hasFeedback)
                 .materials(materials.stream()

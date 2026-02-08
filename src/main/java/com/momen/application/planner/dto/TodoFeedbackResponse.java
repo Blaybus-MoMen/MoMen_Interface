@@ -9,17 +9,17 @@ import lombok.Getter;
 public class TodoFeedbackResponse {
     private Long feedbackId;
     private Long todoId;
-    private String studyCheck;
     private String mentorComment;
-    private String qna;
+    private String question;
+    private String answer;
 
     public static TodoFeedbackResponse from(TodoFeedback feedback) {
         return TodoFeedbackResponse.builder()
                 .feedbackId(feedback.getId())
                 .todoId(feedback.getTodo().getId())
-                .studyCheck(feedback.getStudyCheck())
                 .mentorComment(feedback.getMentorComment())
-                .qna(feedback.getQna())
+                .question(feedback.getQuestion())
+                .answer(feedback.getAnswer())
                 .build();
     }
 }

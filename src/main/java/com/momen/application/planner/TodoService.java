@@ -4,6 +4,7 @@ import com.momen.application.planner.dto.*;
 import com.momen.domain.mentoring.Mentee;
 import com.momen.domain.mentoring.Mentor;
 import com.momen.domain.planner.AssignmentMaterial;
+import com.momen.domain.planner.CreatorType;
 import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
@@ -39,11 +40,16 @@ public class TodoService {
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
+        // 멘티의 수강과목 검증
+        if (!mentee.getSubjects().isEmpty() && !mentee.getSubjects().contains(request.getSubject())) {
+            throw new IllegalArgumentException("멘티의 수강 과목이 아닙니다: " + request.getSubject());
+        }
+
         List<Long> createdIds = new ArrayList<>();
 
-        if (request.getRepeatDays() != null && !request.getRepeatDays().isBlank()) {
+        if (request.getRepeatDays() != null && !request.getRepeatDays().isEmpty()) {
             // 반복 일정 생성
-            createdIds.addAll(createRepeatingTodos(mentee, mentor, request));
+            createdIds.addAll(createRepeatingTodos(mentee, mentor.getUser().getId(), CreatorType.MENTOR, request));
         } else {
             // 단건 생성
             Todo todo = new Todo(
@@ -53,7 +59,8 @@ public class TodoService {
                     request.getGoalDescription(),
                     request.getStartDate(),
                     request.getEndDate(),
-                    mentor.getUser().getId()
+                    mentor.getUser().getId(),
+                    CreatorType.MENTOR
             );
             todo = todoRepository.save(todo);
             saveMaterials(todo, request.getMaterials());
@@ -63,14 +70,13 @@ public class TodoService {
         return createdIds;
     }
 
-    private List<Long> createRepeatingTodos(Mentee mentee, Mentor mentor, TodoCreateRequest request) {
-        Set<DayOfWeek> dayOfWeeks = Arrays.stream(request.getRepeatDays().split(","))
+    private List<Long> createRepeatingTodos(Mentee mentee, Long createdByUserId, CreatorType creatorType, TodoCreateRequest request) {
+        Set<DayOfWeek> dayOfWeeks = request.getRepeatDays().stream()
                 .map(String::trim)
                 .map(String::toUpperCase)
                 .map(DayOfWeek::valueOf)
                 .collect(Collectors.toSet());
 
-        String groupId = UUID.randomUUID().toString();
         List<Long> ids = new ArrayList<>();
 
         LocalDate current = request.getStartDate();
@@ -83,11 +89,11 @@ public class TodoService {
                         request.getTitle(),
                         request.getSubject(),
                         request.getGoalDescription(),
-                        current, // 반복 일정은 해당일 단일
                         current,
-                        mentor.getUser().getId()
+                        current,
+                        createdByUserId,
+                        creatorType
                 );
-                todo.assignRepeatGroup(groupId, request.getRepeatDays());
                 todo = todoRepository.save(todo);
                 saveMaterials(todo, request.getMaterials());
                 ids.add(todo.getId());
@@ -105,7 +111,7 @@ public class TodoService {
         }
     }
 
-    // Todo 수정 (멘토용)
+    // Todo 수정 (멘토용 - 멘토가 생성한 할일만)
     @Transactional
     public void updateTodoByMentor(Long mentorUserId, Long todoId, TodoUpdateRequest request) {
         mentorRepository.findByUserId(mentorUserId)
@@ -114,9 +120,8 @@ public class TodoService {
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
-        // 반복 그룹에서 분리
-        if (todo.getRepeatGroupId() != null) {
-            todo.detachFromRepeatGroup();
+        if (todo.getCreatorType() != CreatorType.MENTOR) {
+            throw new IllegalArgumentException("멘토가 생성한 할일만 수정할 수 있습니다");
         }
 
         if (request.getTitle() != null) {
@@ -128,9 +133,16 @@ public class TodoService {
                     request.getEndDate()
             );
         }
+
+        if (request.getMaterials() != null) {
+            materialRepository.deleteByTodoId(todoId);
+            for (TodoUpdateRequest.MaterialInfo m : request.getMaterials()) {
+                materialRepository.save(new AssignmentMaterial(todo, m.getFileUrl(), m.getFileName()));
+            }
+        }
     }
 
-    // Todo 삭제
+    // Todo 삭제 (멘토용 - 멘토가 생성한 할일만)
     @Transactional
     public void deleteTodo(Long mentorUserId, Long todoId) {
         mentorRepository.findByUserId(mentorUserId)
@@ -138,6 +150,10 @@ public class TodoService {
 
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (todo.getCreatorType() != CreatorType.MENTOR) {
+            throw new IllegalArgumentException("멘토가 생성한 할일만 삭제할 수 있습니다");
+        }
 
         materialRepository.deleteByTodoId(todoId);
         todoRepository.delete(todo);
@@ -161,7 +177,7 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
         return todoRepository.findByMenteeIdAndDate(menteeId, date).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -175,7 +191,18 @@ public class TodoService {
         LocalDate end = ym.atEndOfMonth();
 
         return todoRepository.findByMenteeIdAndMonth(menteeId, start, end).stream()
-                .map(TodoSummaryResponse::from)
+                .map(todo -> TodoSummaryResponse.from(todo, false))
+                .collect(Collectors.toList());
+    }
+
+    // 멘티의 주별 Todo 조회 (멘토용)
+    public List<TodoSummaryResponse> getTodosForMenteeByWeek(Long mentorUserId, Long menteeId, LocalDate weekStartDate) {
+        mentorRepository.findByUserId(mentorUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        LocalDate end = weekStartDate.plusDays(6);
+        return todoRepository.findByMenteeIdAndWeek(menteeId, weekStartDate, end).stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -185,22 +212,26 @@ public class TodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
         List<AssignmentMaterial> materials = materialRepository.findByTodoId(todoId);
-        return TodoDetailResponse.from(todo, materials);
+        return TodoDetailResponse.from(todo, materials, false);
     }
 
     // ==================== 멘티용 API ====================
 
-    // 본인 일별 Todo 조회
+    // 본인 일별 Todo 조회 (수강과목 필터링)
     public List<TodoSummaryResponse> getMyTodosByDate(Long userId, LocalDate date) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        return todoRepository.findByMenteeIdAndDate(mentee.getId(), date).stream()
-                .map(TodoSummaryResponse::from)
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
+                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
+
+        return todos.stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
-    // 본인 월별 Todo 조회
+    // 본인 월별 Todo 조회 (수강과목 필터링)
     public List<TodoSummaryResponse> getMyTodosByMonth(Long userId, String yearMonth) {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
@@ -209,8 +240,28 @@ public class TodoService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 
-        return todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end).stream()
-                .map(TodoSummaryResponse::from)
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
+
+        return todos.stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
+                .collect(Collectors.toList());
+    }
+
+    // 본인 주별 Todo 조회 (수강과목 필터링)
+    public List<TodoSummaryResponse> getMyTodosByWeek(Long userId, LocalDate weekStartDate) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        LocalDate weekEnd = weekStartDate.plusDays(6);
+
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndWeek(mentee.getId(), weekStartDate, weekEnd)
+                : todoRepository.findByMenteeIdAndWeekAndSubjects(mentee.getId(), weekStartDate, weekEnd, mentee.getSubjects());
+
+        return todos.stream()
+                .map(todo -> TodoSummaryResponse.from(todo, false))
                 .collect(Collectors.toList());
     }
 
@@ -219,7 +270,9 @@ public class TodoService {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
+                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
         return toDetailResponseList(todos);
     }
 
@@ -228,7 +281,9 @@ public class TodoService {
         Mentee mentee = menteeRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
-        List<Todo> todos = todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndDate(mentee.getId(), date)
+                : todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, mentee.getSubjects());
         int total = todos.size();
         int completed = (int) todos.stream().filter(t -> Boolean.TRUE.equals(t.getIsCompleted())).count();
         int remaining = total - completed;
@@ -251,7 +306,9 @@ public class TodoService {
         YearMonth ym = YearMonth.parse(yearMonth);
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
-        List<Todo> todos = todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
+        List<Todo> todos = mentee.getSubjects().isEmpty()
+                ? todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end)
+                : todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, mentee.getSubjects());
         return toDetailResponseList(todos);
     }
 
@@ -265,8 +322,89 @@ public class TodoService {
                 .collect(Collectors.groupingBy(m -> m.getTodo().getId()));
 
         return todos.stream()
-                .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of())))
+                .map(todo -> TodoDetailResponse.from(todo, materialsByTodoId.getOrDefault(todo.getId(), List.of()), false))
                 .collect(Collectors.toList());
+    }
+
+    // Todo 생성 (멘티용)
+    @Transactional
+    public List<Long> createTodoByMentee(Long userId, TodoCreateRequest request) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        // 수강과목 검증
+        if (!mentee.getSubjects().isEmpty() && !mentee.getSubjects().contains(request.getSubject())) {
+            throw new IllegalArgumentException("수강 과목이 아닙니다: " + request.getSubject());
+        }
+
+        List<Long> createdIds = new ArrayList<>();
+
+        if (request.getRepeatDays() != null && !request.getRepeatDays().isEmpty()) {
+            createdIds.addAll(createRepeatingTodos(mentee, userId, CreatorType.MENTEE, request));
+        } else {
+            Todo todo = new Todo(
+                    mentee,
+                    request.getTitle(),
+                    request.getSubject(),
+                    request.getGoalDescription(),
+                    request.getStartDate(),
+                    request.getEndDate(),
+                    userId,
+                    CreatorType.MENTEE
+            );
+            todo = todoRepository.save(todo);
+            saveMaterials(todo, request.getMaterials());
+            createdIds.add(todo.getId());
+        }
+
+        return createdIds;
+    }
+
+    // Todo 내용 수정 (멘티용 - 멘티가 생성한 할일만)
+    @Transactional
+    public void updateTodoContentByMentee(Long userId, Long todoId, TodoUpdateRequest request) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+        if (todo.getCreatorType() != CreatorType.MENTEE) {
+            throw new IllegalArgumentException("멘티가 생성한 할일만 수정할 수 있습니다");
+        }
+
+        if (request.getTitle() != null) {
+            todo.updateContent(
+                    request.getTitle(),
+                    request.getSubject(),
+                    request.getGoalDescription(),
+                    request.getStartDate(),
+                    request.getEndDate()
+            );
+        }
+    }
+
+    // Todo 삭제 (멘티용 - 멘티가 생성한 할일만)
+    @Transactional
+    public void deleteTodoByMentee(Long userId, Long todoId) {
+        Mentee mentee = menteeRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getMentee().getId().equals(mentee.getId())) {
+            throw new IllegalArgumentException("접근 권한이 없습니다");
+        }
+        if (todo.getCreatorType() != CreatorType.MENTEE) {
+            throw new IllegalArgumentException("멘티가 생성한 할일만 삭제할 수 있습니다");
+        }
+
+        materialRepository.deleteByTodoId(todoId);
+        todoRepository.delete(todo);
     }
 
     // Todo 완료 처리 / 공부 시간 기록 (멘티용)

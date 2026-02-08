@@ -40,14 +40,14 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.ok(todoFeedbackService.saveFeedbackByMentor(userId, todoId, request)));
     }
 
-    @Operation(summary = "Todo 피드백 Q&A 수정 (멘티)", description = "멘티가 Q&A 섹션을 수정합니다")
-    @PatchMapping("/todo/{todoId}/qna")
-    public ResponseEntity<ApiResponse<TodoFeedbackResponse>> updateTodoQna(
+    @Operation(summary = "Todo 피드백 질문 수정 (멘티)", description = "멘티가 질문을 수정합니다")
+    @PatchMapping("/todo/{todoId}/question")
+    public ResponseEntity<ApiResponse<TodoFeedbackResponse>> updateTodoQuestion(
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "Todo ID") @PathVariable Long todoId,
             @RequestBody Map<String, String> request) {
-        String qna = request.get("qna");
-        return ResponseEntity.ok(ApiResponse.ok(todoFeedbackService.updateQnaByMentee(userId, todoId, qna)));
+        String question = request.get("question");
+        return ResponseEntity.ok(ApiResponse.ok(todoFeedbackService.updateQuestionByMentee(userId, todoId, question)));
     }
 
     @Operation(summary = "Todo 피드백 조회", description = "Todo의 피드백을 조회합니다")

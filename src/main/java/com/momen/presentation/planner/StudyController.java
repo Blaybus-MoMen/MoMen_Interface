@@ -1,5 +1,7 @@
 package com.momen.presentation.planner;
 
+import com.momen.application.mentoring.MentoringService;
+import com.momen.application.mentoring.dto.MenteeResponse;
 import com.momen.application.planner.AssignmentService;
 import com.momen.application.planner.MistakeNoteService;
 import com.momen.application.planner.PlannerService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static java.time.LocalDate.now;
 
@@ -31,6 +34,7 @@ public class StudyController {
     private final MistakeNoteService mistakeNoteService;
     private final TodoService todoService;
     private final PlannerService plannerService;
+    private final MentoringService mentoringService;
 
     // ==================== Todo 조회 (멘티용) ====================
 
@@ -78,6 +82,35 @@ public class StudyController {
             @RequestAttribute("userId") Long userId,
             @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByMonth(userId, yearMonth)));
+    }
+
+    // ==================== Todo CRUD (멘티용) ====================
+
+    @Operation(summary = "Todo 생성 (멘티)", description = "멘티가 본인의 할일을 생성합니다 (단건/반복)")
+    @PostMapping("/todos")
+    public ResponseEntity<ApiResponse<List<Long>>> createTodo(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody TodoCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.createTodoByMentee(userId, request)));
+    }
+
+    @Operation(summary = "Todo 내용 수정 (멘티)", description = "멘티가 본인이 생성한 할일의 내용을 수정합니다")
+    @PatchMapping("/todos/{todoId}/content")
+    public ResponseEntity<ApiResponse<Void>> updateTodoContent(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId,
+            @RequestBody TodoUpdateRequest request) {
+        todoService.updateTodoContentByMentee(userId, todoId, request);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @Operation(summary = "Todo 삭제 (멘티)", description = "멘티가 본인이 생성한 할일을 삭제합니다")
+    @DeleteMapping("/todos/{todoId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTodo(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long todoId) {
+        todoService.deleteTodoByMentee(userId, todoId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @Operation(summary = "Todo 완료/공부시간 기록", description = "멘티가 할일 완료 처리 및 공부 시간을 기록합니다")
@@ -133,6 +166,23 @@ public class StudyController {
             @Parameter(description = "할 일 ID") @RequestParam Long todoId,
             @Parameter(description = "오답 이미지 URL") @RequestParam String imageUrl) {
         return ResponseEntity.ok(ApiResponse.ok(mistakeNoteService.createMistakeNote(userId, todoId, imageUrl)));
+    }
+
+    // ==================== 멘티 정보 ====================
+
+    @Operation(summary = "멘티 본인 정보 조회", description = "멘티 본인의 프로필사진, 수강과목, 응원메세지 등 정보를 조회합니다")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<MenteeResponse>> getMyInfo(@RequestAttribute("userId") Long userId) {
+        return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMyMenteeInfo(userId)));
+    }
+
+    @Operation(summary = "응원 메세지 수정", description = "멘티가 본인의 응원 메세지를 수정합니다")
+    @PatchMapping("/me/cheer-message")
+    public ResponseEntity<ApiResponse<Void>> updateCheerMessage(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody Map<String, String> request) {
+        mentoringService.updateCheerMessage(userId, request.get("cheerMessage"));
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     // ==================== 마이페이지 ====================
