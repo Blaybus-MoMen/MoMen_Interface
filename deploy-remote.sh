@@ -77,7 +77,7 @@ echo "🏥 헬스 체크 (30초 대기)..."
 sleep 30
 
 if docker ps | grep -q "momen-api"; then
-    SERVER_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "221.148.101.200")
+    SERVER_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "100.50.98.194")
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🎉 배포 완료!"

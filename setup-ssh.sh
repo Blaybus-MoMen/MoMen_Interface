@@ -7,7 +7,7 @@ echo "🔐 StoryG SSH 키 설정 가이드"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # 서버 정보
-DEV_SERVER_HOST="${DEV_SERVER_HOST:-221.148.101.200}"
+DEV_SERVER_HOST="${DEV_SERVER_HOST:-100.50.98.194}"
 DEV_SERVER_USER="${DEV_SERVER_USER:-root}"
 
 # ── 1. SSH 키 확인 ────────────────────────────────────────

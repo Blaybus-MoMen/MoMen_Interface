@@ -1,174 +1,110 @@
 // ============================================================
-// Momen - Jenkins Pipeline (Spring Boot, Gradle, Docker)
+// Momen - Jenkins Pipeline
+// Jenkins(Docker) + 같은 서버에서 Docker Compose 배포
 // ============================================================
 
 pipeline {
     agent any
 
     options {
-        buildDiscarder(logRotator(numToKeepStr: '30'))
-        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 20, unit: 'MINUTES')
         timestamps()
         disableConcurrentBuilds()
     }
 
     environment {
-        JAVA_VERSION = '21'
         APP_NAME = 'momen'
-    }
-
-    parameters {
-        choice(
-            name: 'BRANCH',
-            choices: ['develop', 'main', 'master'],
-            description: '빌드할 브랜치'
-        )
-        choice(
-            name: 'ENVIRONMENT',
-            choices: ['dev', 'staging', 'prod'],
-            description: '배포 환경'
-        )
-        booleanParam(
-            name: 'SKIP_TESTS',
-            defaultValue: false,
-            description: '테스트 건너뛰기 (비권장)'
-        )
-        booleanParam(
-            name: 'DOCKER_BUILD',
-            defaultValue: true,
-            description: 'Docker 이미지 빌드'
-        )
-        string(
-            name: 'DOCKER_REGISTRY',
-            defaultValue: '',
-            description: 'Docker 레지스트리 (예: registry.example.com 또는 빈 값 시 로컬만 빌드)'
-        )
+        APP_PORT = '8089'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                script {
-                    if (params.BRANCH) {
-                        sh "git checkout ${params.BRANCH} || true"
-                        sh "git pull origin ${params.BRANCH} || true"
-                    }
-                }
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                    chmod +x gradlew
-                    ./gradlew clean build --no-daemon -x test
-                '''
+                sh """
+                    docker build \
+                        -t ${APP_NAME}:build-${env.BUILD_NUMBER} \
+                        -t ${APP_NAME}:latest \
+                        .
+                """
             }
         }
 
-        stage('Test') {
-            when {
-                expression { !params.SKIP_TESTS }
-            }
+        stage('Deploy') {
             steps {
-                sh './gradlew test --no-daemon'
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: 'build/test-results/test/*.xml'
-                }
-            }
-        }
-
-        stage('OWASP Dependency Check') {
-            steps {
-                sh './gradlew dependencyCheckAnalyze --no-daemon'
-                publishHTML target: [
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'build/reports/dependency-check',
-                    reportFiles: 'dependency-check-report.html',
-                    reportName: 'OWASP Dependency Check Report'
-                ]
-            }
-        }
-
-        stage('Package') {
-            steps {
-                sh './gradlew bootJar --no-daemon'
-                archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
-            }
-        }
-
-        stage('Docker Build') {
-            when {
-                expression { params.DOCKER_BUILD }
-            }
-            steps {
-                script {
-                    def tag = "${params.ENVIRONMENT}-${env.BUILD_NUMBER}"
-                    def imageName = "${params.DOCKER_REGISTRY ? params.DOCKER_REGISTRY + '/' : ''}${APP_NAME}:${tag}"
-                    env.DOCKER_IMAGE_TAG = tag
-                    env.DOCKER_IMAGE_FULL = imageName
-                }
-                sh '''
-                    docker build -t ${DOCKER_IMAGE_FULL} .
-                    docker tag ${DOCKER_IMAGE_FULL} ${APP_NAME}:latest
-                '''
-            }
-        }
-
-        stage('Docker Push') {
-            when {
-                expression { params.DOCKER_BUILD && params.DOCKER_REGISTRY?.trim() }
-            }
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-registry-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                withCredentials([file(credentialsId: 'momen-env-file', variable: 'ENV_FILE')]) {
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin ${DOCKER_REGISTRY}
-                        docker push ${DOCKER_IMAGE_FULL}
-                        docker push ${APP_NAME}:latest
+                        cp "$ENV_FILE" .env
+                        docker compose down --remove-orphans || true
+                        docker compose up -d
+                        rm -f .env
                     '''
                 }
             }
         }
 
-        stage('Deploy') {
-            when {
-                expression { params.ENVIRONMENT in ['dev', 'staging', 'prod'] }
-            }
+        stage('Health Check') {
             steps {
-                echo "배포 환경: ${params.ENVIRONMENT}"
-                // 실제 배포는 환경별 스크립트/플러그인으로 확장
-                // 예: sshPublisher, kubectl, ansible 등
                 script {
-                    if (params.ENVIRONMENT == 'dev') {
-                        echo 'Dev 배포: JAR 아카이브 완료. 필요 시 여기서 서버 배포 스크립트 호출.'
-                    } else if (params.ENVIRONMENT == 'staging') {
-                        echo 'Staging 배포: Docker 이미지 푸시 완료. 필요 시 kubectl/helm 또는 서버 배포.'
-                    } else if (params.ENVIRONMENT == 'prod') {
-                        echo 'Prod 배포: 수동 승인 또는 별도 파이프라인에서 처리 권장.'
+                    def maxRetries = 12
+                    def healthy = false
+
+                    for (int i = 1; i <= maxRetries; i++) {
+                        try {
+                            sh "curl -sf http://localhost:${APP_PORT}/actuator/health"
+                            healthy = true
+                            echo "Health check 성공 (${i}/${maxRetries})"
+                            break
+                        } catch (Exception e) {
+                            echo "Health check 대기 중... (${i}/${maxRetries})"
+                            sleep 5
+                        }
+                    }
+
+                    if (!healthy) {
+                        sh 'docker logs momen-api --tail 50'
+                        error 'Health check 실패 - 애플리케이션이 시작되지 않았습니다'
                     }
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh 'docker image prune -f || true'
             }
         }
     }
 
     post {
-        always {
-            cleanWs(deleteDirs: true)
-        }
         success {
-            echo "빌드 성공: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            echo """
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            ✅ 배포 성공: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+            🌐 http://100.50.98.194:${APP_PORT}
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            """
         }
         failure {
-            echo "빌드 실패: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            echo "❌ 배포 실패: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            // 실패 시 이전 이미지로 롤백
+            sh """
+                docker compose down --remove-orphans || true
+                if docker image inspect ${APP_NAME}:build-\$((\${BUILD_NUMBER} - 1)) > /dev/null 2>&1; then
+                    docker tag ${APP_NAME}:build-\$((\${BUILD_NUMBER} - 1)) ${APP_NAME}:latest
+                    docker compose up -d || true
+                    echo "⏪ 이전 빌드로 롤백 완료"
+                fi
+            """
+        }
+        always {
+            cleanWs(deleteDirs: true)
         }
     }
 }
