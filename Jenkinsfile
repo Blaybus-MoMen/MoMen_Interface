@@ -52,7 +52,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    def maxRetries = 12
+                    def maxRetries = 24
                     def healthy = false
 
                     for (int i = 1; i <= maxRetries; i++) {
