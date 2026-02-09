@@ -9,6 +9,7 @@ import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.AssignmentMaterialRepository;
+import com.momen.infrastructure.jpa.planner.TodoFeedbackRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final AssignmentMaterialRepository materialRepository;
+    private final TodoFeedbackRepository feedbackRepository;
     private final MenteeRepository menteeRepository;
     private final MentorRepository mentorRepository;
 
@@ -503,9 +505,13 @@ public class TodoService {
         List<Long> todoIds = todos.stream().map(Todo::getId).toList();
         Map<Long, List<AssignmentMaterial>> materialsMap = materialRepository.findByTodoIdIn(todoIds).stream()
                 .collect(Collectors.groupingBy(m -> m.getTodo().getId()));
+        Set<Long> feedbackTodoIds = new HashSet<>(feedbackRepository.findTodoIdsWithFeedback(todoIds));
 
         return todos.stream()
-                .map(todo -> TodoSummaryResponse.from(todo, materialsMap.getOrDefault(todo.getId(), Collections.emptyList())))
+                .map(todo -> TodoSummaryResponse.from(
+                        todo,
+                        materialsMap.getOrDefault(todo.getId(), Collections.emptyList()),
+                        feedbackTodoIds.contains(todo.getId())))
                 .collect(Collectors.toList());
     }
 }
