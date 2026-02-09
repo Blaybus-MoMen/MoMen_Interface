@@ -91,31 +91,24 @@ public class MentoringController {
 
     // ==================== Todo 조회 ====================
 
-    @Operation(summary = "멘티 일별 Todo 조회", description = "멘토가 특정 멘티의 특정 날짜 할일을 조회합니다")
-    @GetMapping(value = "/mentees/{menteeId}/todos", params = "date")
-    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodosByDate(
+    @Operation(summary = "멘티 Todo 조회", description = "멘토가 특정 멘티의 할일을 조회합니다. date(일별), weekStartDate(주별), yearMonth(월별) 중 하나를 선택하여 조회합니다. 우선순위: date > weekStartDate > yearMonth")
+    @GetMapping(value = "/mentees/{menteeId}/todos")
+    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodos(
             @RequestAttribute("userId") Long userId,
             @PathVariable Long menteeId,
-            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByDate(userId, menteeId, date)));
-    }
-
-    @Operation(summary = "멘티 월별 Todo 조회", description = "멘토가 특정 멘티의 월별 할일을 조회합니다")
-    @GetMapping(value = "/mentees/{menteeId}/todos", params = "yearMonth")
-    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodosByMonth(
-            @RequestAttribute("userId") Long userId,
-            @PathVariable Long menteeId,
-            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth)));
-    }
-
-    @Operation(summary = "멘티 주별 Todo 조회", description = "멘토가 특정 멘티의 특정 주차 할일을 조회합니다 (일요일~토요일)")
-    @GetMapping(value = "/mentees/{menteeId}/todos", params = "weekStartDate")
-    public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getTodosByWeek(
-            @RequestAttribute("userId") Long userId,
-            @PathVariable Long menteeId,
-            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate)));
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate,
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth) {
+        if (date != null) {
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByDate(userId, menteeId, date)));
+        }
+        if (weekStartDate != null) {
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate)));
+        }
+        if (yearMonth != null) {
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth)));
+        }
+        return ResponseEntity.badRequest().body(ApiResponse.error("date, weekStartDate, yearMonth 중 하나는 필수입니다", "MISSING_PARAM"));
     }
 
     @Operation(summary = "Todo 상세 조회", description = "할일의 상세 정보를 조회합니다 (자료파일 포함)")
