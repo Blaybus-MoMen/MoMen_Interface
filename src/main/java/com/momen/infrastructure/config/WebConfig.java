@@ -9,7 +9,6 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -19,21 +18,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                // 프론트엔드 주소 허용
-                .allowedOrigins(
-                        "http://localhost:3000",           // React 개발 서버
-                        "http://localhost:3001",           // 추가 개발 서버
-                        "http://localhost:5173",           // Vite 개발 서버
-                        "https://momen-two.vercel.app"    // Vercel 배포
-                )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
+    // CORS 설정은 SecurityConfig.corsConfigurationSource()에서 관리
 
     /**
      * 비동기 요청 처리 설정
