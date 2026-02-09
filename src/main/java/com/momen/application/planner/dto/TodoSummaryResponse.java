@@ -18,13 +18,16 @@ public class TodoSummaryResponse {
     private LocalDate endDate;
     private Boolean mentorConfirmed;
     private CreatorType creatorType;
+    private Boolean isCompleted;
     private boolean hasFeedback;
-    private int studyTimeHours;
-    private int studyTimeMinutes;
-    private int studyTimeSeconds;
+    private String studyTimeHours;
+    private String studyTimeMinutes;
+    private String studyTimeSeconds;
+
+    private static String fmt(int v) { return String.format("%02d", v); }
 
     public static TodoSummaryResponse from(Todo todo) {
-        int totalSec = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
+        int s = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -34,14 +37,15 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
-                .studyTimeHours(totalSec / 3600)
-                .studyTimeMinutes((totalSec % 3600) / 60)
-                .studyTimeSeconds(totalSec % 60)
+                .isCompleted(todo.getIsCompleted())
+                .studyTimeHours(fmt(s / 3600))
+                .studyTimeMinutes(fmt((s % 3600) / 60))
+                .studyTimeSeconds(fmt(s % 60))
                 .build();
     }
 
     public static TodoSummaryResponse from(Todo todo, boolean hasFeedback) {
-        int totalSec = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
+        int s = todo.getStudyTime() != null ? todo.getStudyTime() : 0;
         return TodoSummaryResponse.builder()
                 .todoId(todo.getId())
                 .title(todo.getTitle())
@@ -51,10 +55,11 @@ public class TodoSummaryResponse {
                 .endDate(todo.getEndDate())
                 .mentorConfirmed(todo.getMentorConfirmed())
                 .creatorType(todo.getCreatorType())
+                .isCompleted(todo.getIsCompleted())
                 .hasFeedback(hasFeedback)
-                .studyTimeHours(totalSec / 3600)
-                .studyTimeMinutes((totalSec % 3600) / 60)
-                .studyTimeSeconds(totalSec % 60)
+                .studyTimeHours(fmt(s / 3600))
+                .studyTimeMinutes(fmt((s % 3600) / 60))
+                .studyTimeSeconds(fmt(s % 60))
                 .build();
     }
 }

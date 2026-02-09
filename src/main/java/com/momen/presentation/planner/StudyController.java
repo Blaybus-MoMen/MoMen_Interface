@@ -41,28 +41,31 @@ public class StudyController {
 
     // ==================== Todo 조회 (멘티용) ====================
 
-    @Operation(summary = "일별 Todo 조회", description = "멘티 본인의 특정 날짜 할일을 조회합니다")
+    @Operation(summary = "일별 Todo 조회", description = "멘티 본인의 특정 날짜 할일을 조회합니다. subjects로 과목 필터링 가능 (다중선택)")
     @GetMapping(value = "/todos", params = "date")
     public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getMyTodosByDate(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByDate(userId, date)));
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "과목 필터 (KOREAN,MATH,ENGLISH 등)") @RequestParam(required = false) List<String> subjects) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByDate(userId, date, subjects)));
     }
 
-    @Operation(summary = "월별 Todo 조회", description = "멘티 본인의 월별 할일을 조회합니다")
+    @Operation(summary = "월별 Todo 조회", description = "멘티 본인의 월별 할일을 조회합니다. subjects로 과목 필터링 가능 (다중선택)")
     @GetMapping(value = "/todos", params = "yearMonth")
     public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getMyTodosByMonth(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByMonth(userId, yearMonth)));
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth,
+            @Parameter(description = "과목 필터") @RequestParam(required = false) List<String> subjects) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByMonth(userId, yearMonth, subjects)));
     }
 
-    @Operation(summary = "주별 Todo 조회", description = "멘티 본인의 특정 주차 할일을 조회합니다 (일요일~토요일)")
+    @Operation(summary = "주별 Todo 조회", description = "멘티 본인의 특정 주차 할일을 조회합니다. subjects로 과목 필터링 가능 (다중선택)")
     @GetMapping(value = "/todos", params = "weekStartDate")
     public ResponseEntity<ApiResponse<List<TodoSummaryResponse>>> getMyTodosByWeek(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByWeek(userId, weekStartDate)));
+            @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate,
+            @Parameter(description = "과목 필터") @RequestParam(required = false) List<String> subjects) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodosByWeek(userId, weekStartDate, subjects)));
     }
 
     @Operation(summary = "Todo 상세 조회", description = "할일의 상세 정보를 조회합니다 (자료파일 포함)")
@@ -71,20 +74,22 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(todoService.getTodoDetail(todoId)));
     }
 
-    @Operation(summary = "학습 카드 목록 조회 (일별)", description = "해당 날짜의 학습 할일을 카드 표시용 배열로 조회합니다 (진행상태, 학습지 포함)")
+    @Operation(summary = "학습 카드 목록 조회 (일별)", description = "해당 날짜의 학습 할일을 카드 표시용 배열로 조회합니다. subjects로 과목 필터링 가능")
     @GetMapping(value = "/todos/cards", params = "date")
     public ResponseEntity<ApiResponse<List<TodoDetailResponse>>> getMyTodoCardsByDate(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByDate(userId, date)));
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "과목 필터") @RequestParam(required = false) List<String> subjects) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByDate(userId, date, subjects)));
     }
 
-    @Operation(summary = "학습 카드 목록 조회 (월별)", description = "해당 월의 학습 할일을 카드 표시용 배열로 조회합니다 (진행상태, 학습지 포함)")
+    @Operation(summary = "학습 카드 목록 조회 (월별)", description = "해당 월의 학습 할일을 카드 표시용 배열로 조회합니다. subjects로 과목 필터링 가능")
     @GetMapping(value = "/todos/cards", params = "yearMonth")
     public ResponseEntity<ApiResponse<List<TodoDetailResponse>>> getMyTodoCardsByMonth(
             @RequestAttribute("userId") Long userId,
-            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth) {
-        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByMonth(userId, yearMonth)));
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam String yearMonth,
+            @Parameter(description = "과목 필터") @RequestParam(required = false) List<String> subjects) {
+        return ResponseEntity.ok(ApiResponse.ok(todoService.getMyTodoCardsByMonth(userId, yearMonth, subjects)));
     }
 
     // ==================== Todo CRUD (멘티용) ====================
@@ -116,13 +121,13 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @Operation(summary = "Todo 학습 시간 수정", description = "멘티가 특정 할일의 학습 시간(초)을 수정합니다. 타이머 측정값을 초 단위로 전달합니다.")
+    @Operation(summary = "Todo 학습 시간 추가", description = "타이머로 측정한 시간(초)을 기존 학습시간에 누적합니다.")
     @PatchMapping("/todos/{todoId}/study-time")
-    public ResponseEntity<ApiResponse<Void>> updateStudyTime(
+    public ResponseEntity<ApiResponse<Void>> addStudyTime(
             @RequestAttribute("userId") Long userId,
             @PathVariable Long todoId,
             @RequestBody Map<String, Integer> request) {
-        todoService.updateStudyTime(userId, todoId, request.get("studyTime"));
+        todoService.addStudyTime(userId, todoId, request.get("studyTime"));
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
@@ -204,6 +209,15 @@ public class StudyController {
             @RequestAttribute("userId") Long userId,
             @RequestBody Map<String, String> request) {
         mentoringService.updateCheerMessage(userId, request.get("cheerMessage"));
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @Operation(summary = "특징 카드 수정", description = "멘티가 본인의 특징 카드를 수정합니다 (최대 3개)")
+    @PatchMapping("/me/cards")
+    public ResponseEntity<ApiResponse<Void>> updateCards(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody Map<String, List<String>> request) {
+        mentoringService.updateCards(userId, request.get("cards"));
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
