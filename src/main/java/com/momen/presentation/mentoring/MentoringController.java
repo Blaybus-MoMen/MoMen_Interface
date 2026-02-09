@@ -34,13 +34,13 @@ public class MentoringController {
 
     @Operation(summary = "담당 멘티 목록 조회", description = "멘토가 담당하는 멘티 목록을 조회합니다")
     @GetMapping("/mentees")
-    public ResponseEntity<ApiResponse<List<MenteeResponse>>> getMenteeList(@RequestAttribute("userId") Long userId) {
+    public ResponseEntity<ApiResponse<List<MenteeResponse.MenteeForMentorResponse>>> getMenteeList(@RequestAttribute("userId") Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMenteeList(userId)));
     }
 
     @Operation(summary = "멘티 단건 조회", description = "멘토가 담당 멘티 한 명의 정보를 조회합니다")
     @GetMapping("/mentees/{menteeId}")
-    public ResponseEntity<ApiResponse<MenteeResponse>> getMentee(
+    public ResponseEntity<ApiResponse<MenteeResponse.MenteeForMentorResponse>> getMentee(
             @RequestAttribute("userId") Long userId,
             @PathVariable Long menteeId) {
         return ResponseEntity.ok(ApiResponse.ok(mentoringService.getMentee(userId, menteeId)));
