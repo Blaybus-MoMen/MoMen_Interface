@@ -18,7 +18,6 @@ public class MenteeResponse {
     private List<String> cards;
     private List<String> subjects;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String cheerMessage;
 
     public static MenteeResponse from(Mentee mentee) {
@@ -34,15 +33,28 @@ public class MenteeResponse {
                 .build();
     }
 
-    public static MenteeResponse fromForMentor(Mentee mentee) {
-        return MenteeResponse.builder()
-                .menteeId(mentee.getId())
-                .userId(mentee.getUser().getId())
-                .name(mentee.getUser().getName())
-                .profileImageUrl(mentee.getUser().getProfileImageUrl())
-                .grade(mentee.getGrade())
-                .cards(mentee.getCards())
-                .subjects(mentee.getSubjects())
-                .build();
+    @Getter
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class MenteeForMentorResponse {
+        private Long menteeId;
+        private Long userId;
+        private String name;
+        private String profileImageUrl;
+        private String grade;
+        private List<String> cards;
+        private List<String> subjects;
+
+        public static MenteeForMentorResponse from(Mentee mentee) {
+            return MenteeForMentorResponse.builder()
+                    .menteeId(mentee.getId())
+                    .userId(mentee.getUser().getId())
+                    .name(mentee.getUser().getName())
+                    .profileImageUrl(mentee.getUser().getProfileImageUrl())
+                    .grade(mentee.getGrade())
+                    .cards(mentee.getCards())
+                    .subjects(mentee.getSubjects())
+                    .build();
+        }
     }
 }
