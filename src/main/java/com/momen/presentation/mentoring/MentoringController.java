@@ -98,15 +98,16 @@ public class MentoringController {
             @PathVariable Long menteeId,
             @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate,
-            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth) {
+            @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "과목 필터 (복수 선택 가능)") @RequestParam(required = false) List<String> subjects) {
         if (date != null) {
-            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByDate(userId, menteeId, date)));
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByDate(userId, menteeId, date, subjects)));
         }
         if (weekStartDate != null) {
-            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate)));
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByWeek(userId, menteeId, weekStartDate, subjects)));
         }
         if (yearMonth != null) {
-            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth)));
+            return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByMonth(userId, menteeId, yearMonth, subjects)));
         }
         return ResponseEntity.badRequest().body(ApiResponse.error("date, weekStartDate, yearMonth 중 하나는 필수입니다", "MISSING_PARAM"));
     }
@@ -119,8 +120,8 @@ public class MentoringController {
 
     @Operation(summary = "Todo별 제출물 조회", description = "특정 할일에 제출된 과제를 조회합니다")
     @GetMapping("/todos/{todoId}/submissions")
-    public ResponseEntity<ApiResponse<List<AssignmentSubmissionResponse>>> getSubmissions(@PathVariable Long todoId) {
-        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionsByTodo(todoId)));
+    public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmission(@PathVariable Long todoId) {
+        return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionByTodo(todoId)));
     }
 
     // ==================== AI 튜터 ====================
