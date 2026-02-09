@@ -40,16 +40,16 @@ public class MentoringService {
     }
 
     // 멘토의 담당 멘티 목록 조회
-    public List<MenteeResponse> getMenteeList(Long mentorUserId) {
+    public List<MenteeResponse.MenteeForMentorResponse> getMenteeList(Long mentorUserId) {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
         return menteeRepository.findByMentorId(mentor.getId()).stream()
-                .map(MenteeResponse::fromForMentor)
+                .map(MenteeResponse.MenteeForMentorResponse::from)
                 .collect(Collectors.toList());
     }
 
     // 멘토의 담당 멘티 단건 조회
-    public MenteeResponse getMentee(Long mentorUserId, Long menteeId) {
+    public MenteeResponse.MenteeForMentorResponse getMentee(Long mentorUserId, Long menteeId) {
         Mentor mentor = mentorRepository.findByUserId(mentorUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
         Mentee mentee = menteeRepository.findById(menteeId)
@@ -57,7 +57,7 @@ public class MentoringService {
         if (!mentee.getMentor().getId().equals(mentor.getId())) {
             throw new IllegalArgumentException("해당 멘티는 담당 멘티가 아닙니다");
         }
-        return MenteeResponse.fromForMentor(mentee);
+        return MenteeResponse.MenteeForMentorResponse.from(mentee);
     }
 
     // 멘티 본인 정보 조회

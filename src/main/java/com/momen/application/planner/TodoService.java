@@ -9,6 +9,7 @@ import com.momen.domain.planner.Todo;
 import com.momen.infrastructure.jpa.mentoring.MenteeRepository;
 import com.momen.infrastructure.jpa.mentoring.MentorRepository;
 import com.momen.infrastructure.jpa.planner.AssignmentMaterialRepository;
+import com.momen.infrastructure.jpa.planner.TodoFeedbackRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final AssignmentMaterialRepository materialRepository;
+    private final TodoFeedbackRepository feedbackRepository;
     private final MenteeRepository menteeRepository;
     private final MentorRepository mentorRepository;
 
@@ -179,7 +181,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndDateAndSubjects(menteeId, date, subjects)
                 : todoRepository.findByMenteeIdAndDate(menteeId, date);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // 멘티의 월별 Todo 조회 (멘토용)
@@ -194,7 +196,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndMonthAndSubjects(menteeId, start, end, subjects)
                 : todoRepository.findByMenteeIdAndMonth(menteeId, start, end);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // 멘티의 주별 Todo 조회 (멘토용)
@@ -206,7 +208,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndWeekAndSubjects(menteeId, weekStartDate, end, subjects)
                 : todoRepository.findByMenteeIdAndWeek(menteeId, weekStartDate, end);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // Todo 상세 조회
@@ -228,7 +230,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndDateAndSubjects(mentee.getId(), date, subjects)
                 : todoRepository.findByMenteeIdAndDate(mentee.getId(), date);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // 본인 월별 Todo 조회
@@ -243,7 +245,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndMonthAndSubjects(mentee.getId(), start, end, subjects)
                 : todoRepository.findByMenteeIdAndMonth(mentee.getId(), start, end);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // 본인 주별 Todo 조회
@@ -256,7 +258,7 @@ public class TodoService {
         List<Todo> todos = hasSubjects(subjects)
                 ? todoRepository.findByMenteeIdAndWeekAndSubjects(mentee.getId(), weekStartDate, weekEnd, subjects)
                 : todoRepository.findByMenteeIdAndWeek(mentee.getId(), weekStartDate, weekEnd);
-        return todos.stream().map(todo -> TodoSummaryResponse.from(todo, false)).collect(Collectors.toList());
+        return toSummaryWithMaterials(todos);
     }
 
     // 카드 UI용: 일별 Todo 배열 (진행상태, 학습지 포함)
@@ -495,5 +497,21 @@ public class TodoService {
 
     private boolean hasSubjects(List<String> subjects) {
         return subjects != null && !subjects.isEmpty();
+    }
+
+    private List<TodoSummaryResponse> toSummaryWithMaterials(List<Todo> todos) {
+        if (todos.isEmpty()) return Collections.emptyList();
+
+        List<Long> todoIds = todos.stream().map(Todo::getId).toList();
+        Map<Long, List<AssignmentMaterial>> materialsMap = materialRepository.findByTodoIdIn(todoIds).stream()
+                .collect(Collectors.groupingBy(m -> m.getTodo().getId()));
+        Set<Long> feedbackTodoIds = new HashSet<>(feedbackRepository.findTodoIdsWithFeedback(todoIds));
+
+        return todos.stream()
+                .map(todo -> TodoSummaryResponse.from(
+                        todo,
+                        materialsMap.getOrDefault(todo.getId(), Collections.emptyList()),
+                        feedbackTodoIds.contains(todo.getId())))
+                .collect(Collectors.toList());
     }
 }
