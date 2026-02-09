@@ -83,11 +83,12 @@ public class AssignmentService {
     /** Todo별 제출물 조회 */
     @Transactional(readOnly = true)
     public AssignmentSubmissionResponse getSubmissionByTodo(Long todoId) {
-        AssignmentSubmission submission = submissionRepository.findByTodoId(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("제출물이 없습니다"));
-
-        List<SubmissionFile> files = fileRepository.findBySubmissionId(submission.getId());
-        return AssignmentSubmissionResponse.from(submission, files);
+        return submissionRepository.findByTodoId(todoId)
+                .map(submission -> {
+                    List<SubmissionFile> files = fileRepository.findBySubmissionId(submission.getId());
+                    return AssignmentSubmissionResponse.from(submission, files);
+                })
+                .orElse(null);
     }
 
     @Async
