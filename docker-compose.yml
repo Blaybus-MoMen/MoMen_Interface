@@ -13,6 +13,8 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+    volumes:
+      - momen-uploads:/app/uploads
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -29,6 +31,9 @@ services:
     networks:
       - momen-net
     restart: always
+
+volumes:
+  momen-uploads:
 
 networks:
   momen-net:
