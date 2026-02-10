@@ -79,9 +79,9 @@ public class TodoFeedbackService {
 
     // Todo 피드백 조회
     public TodoFeedbackResponse getFeedback(Long todoId) {
-        TodoFeedback feedback = todoFeedbackRepository.findByTodoId(todoId)
-                .orElseThrow(() -> new IllegalArgumentException("Feedback not found"));
-        return buildResponseWithSubmission(feedback, todoId);
+        return todoFeedbackRepository.findByTodoId(todoId)
+                .map(feedback -> buildResponseWithSubmission(feedback, todoId))
+                .orElse(null);
     }
 
     private TodoFeedbackResponse buildResponseWithSubmission(TodoFeedback feedback, Long todoId) {
