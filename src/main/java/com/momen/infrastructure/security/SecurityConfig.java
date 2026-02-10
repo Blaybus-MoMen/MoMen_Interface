@@ -47,7 +47,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(authorize -> authorize
-                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/email-verification/**",
