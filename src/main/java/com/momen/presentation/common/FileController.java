@@ -34,9 +34,11 @@ public class FileController {
         return ResponseEntity.ok(ApiResponse.ok(Map.of("fileUrl", fileUrl)));
     }
 
-    @Operation(summary = "파일 다운로드", description = "업로드된 파일을 다운로드합니다")
+    @Operation(summary = "파일 조회/다운로드", description = "업로드된 파일을 조회하거나 다운로드합니다. download=true 시 즉시 다운로드")
     @GetMapping("/{filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable String filename,
+            @RequestParam(required = false, defaultValue = "false") boolean download) {
         try {
             Path filePath = fileStorageService.getFilePath(filename);
             Resource resource = new UrlResource(filePath.toUri());
@@ -50,9 +52,13 @@ public class FileController {
                 contentType = "application/octet-stream";
             }
 
+            String disposition = download
+                    ? "attachment; filename=\"" + filename + "\""
+                    : "inline; filename=\"" + filename + "\"";
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, contentType)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
