@@ -23,6 +23,9 @@ public class AssignmentSubmission extends BaseTimeEntity {
     @JoinColumn(name = "todo_id", nullable = false, unique = true)
     private Todo todo;
 
+    @Column(name = "file_url")
+    private String fileUrl;
+
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
 
