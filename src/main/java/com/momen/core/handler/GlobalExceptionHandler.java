@@ -10,8 +10,10 @@ import com.momen.core.jenkins.exception.JenkinsConnectionException;
 import com.momen.core.jenkins.exception.JenkinsException;
 import com.momen.core.jenkins.exception.JenkinsJobNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -346,8 +348,14 @@ public class GlobalExceptionHandler {
      * 기타 예외 처리
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<ErrorResponse>> handleException(Exception e, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleException(Exception e, HttpServletRequest request, HttpServletResponse response) {
         log.error("Unhandled exception at {}: {}", request.getRequestURI(), e.getMessage(), e);
+
+        // SSE 엔드포인트는 text/event-stream이라 ApiResponse 변환 불가 → null 반환
+        String contentType = response.getContentType();
+        if (contentType != null && contentType.contains(MediaType.TEXT_EVENT_STREAM_VALUE)) {
+            return null;
+        }
 
         ErrorResponse errorResponse = ErrorResponse.of(
                 ErrorCode.INTERNAL_SERVER_ERROR,

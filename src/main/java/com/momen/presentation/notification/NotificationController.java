@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
+@Slf4j
 @Tag(name = "Notification", description = "알림 API")
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -25,7 +27,14 @@ public class NotificationController {
     @Operation(summary = "SSE 구독", description = "실시간 알림을 위한 SSE 연결 (query param token 사용)")
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@RequestAttribute("userId") Long userId) {
-        return notificationService.subscribe(userId);
+        try {
+            return notificationService.subscribe(userId);
+        } catch (Exception e) {
+            log.error("SSE 구독 실패 - userId: {}", userId, e);
+            SseEmitter emitter = new SseEmitter();
+            emitter.completeWithError(e);
+            return emitter;
+        }
     }
 
     @Operation(summary = "알림 목록 조회", description = "전체 알림 목록을 조회합니다")
