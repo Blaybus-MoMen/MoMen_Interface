@@ -22,7 +22,7 @@ public class NotificationScheduler {
     private final TodoRepository todoRepository;
     private final NotificationService notificationService;
 
-    @Scheduled(cron = "0 */3 * * * *", zone = "Asia/Seoul") // TODO: 테스트 후 "0 0 0 * * *"로 복구
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void notifyIncompleteTodos() {
         try {
             LocalDate today = LocalDate.now();
