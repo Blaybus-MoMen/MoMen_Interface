@@ -87,10 +87,10 @@ public class SecurityConfig {
                 "http://localhost:3001",
                 "http://localhost:5173",
                 "https://momen-two.vercel.app",
-                "http://100.50.92.194",
-                "http://100.50.92.194:5173",
-                "http://100.50.92.194:8080",
-                "http://100.50.92.194:8089"
+                "http://100.50.98.194",
+                "http://100.50.98.194:5173",
+                "http://100.50.98.194:8080",
+                "http://100.50.98.194:8089"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
