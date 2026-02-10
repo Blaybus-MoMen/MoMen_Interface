@@ -19,10 +19,12 @@ public class StudyDailyStatsResponse {
     private int completionRatePercent;
     private String message;
 
-    public static String messageFor(int percent) {
-        if (percent <= 25) return "첫 걸음을 뗐어요. 시작이 제일 어려워요!";
-        if (percent <= 50) return "지금 반이나 했어요! 흐름 좋아요.";
-        if (percent <= 75) return "후반부에 들어왔어요. 끝이 보여요!";
-        return "마지막 스퍼트예요! 거의 완료!";
-    }
+  public static String messageFor(int percent) {
+    if (percent == 0) return "오늘 도전을 시작해요! ";
+    if (percent < 30) return "차근차근 시작해요! ";
+    if (percent < 50) return "좋은 흐름이에요, 계속 가요! ";
+    if (percent < 80) return "절반 넘었어요, 조금만 더! ";
+    if (percent < 100) return "거의 다 왔어요, 마지막 스퍼트! ";
+    return "오늘 미션 완수! ";
+  }
 }
