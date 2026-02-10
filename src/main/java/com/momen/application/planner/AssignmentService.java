@@ -12,6 +12,7 @@ import com.momen.infrastructure.jpa.planner.AssignmentSubmissionRepository;
 import com.momen.infrastructure.jpa.planner.SubmissionFileRepository;
 import com.momen.infrastructure.jpa.planner.TodoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AssignmentService {
@@ -94,10 +96,14 @@ public class AssignmentService {
     @Async
     @Transactional
     public void analyzeSubmissionAsync(Long submissionId, String imageUrl) {
-        AssignmentSubmission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
+        try {
+            AssignmentSubmission submission = submissionRepository.findById(submissionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Submission not found"));
 
-        AiClient.AiVisionResult result = aiClient.analyzeImage(imageUrl);
-        submission.updateAiAnalysis(result.status(), result.densityScore(), result.comment());
+            AiClient.AiVisionResult result = aiClient.analyzeImage(imageUrl);
+            submission.updateAiAnalysis(result.status(), result.densityScore(), result.comment());
+        } catch (Exception e) {
+            log.error("AI 분석 실패 - submissionId: {}, imageUrl: {}", submissionId, imageUrl, e);
+        }
     }
 }
