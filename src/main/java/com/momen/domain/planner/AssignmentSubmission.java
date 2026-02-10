@@ -24,7 +24,7 @@ public class AssignmentSubmission extends BaseTimeEntity {
     private Todo todo;
 
     @Column(name = "file_url")
-    private String fileUrl;
+    private String fileUrl = "";
 
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
