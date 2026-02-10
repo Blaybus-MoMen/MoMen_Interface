@@ -90,7 +90,9 @@ public class SecurityConfig {
                 "http://100.50.98.194",
                 "http://100.50.98.194:5173",
                 "http://100.50.98.194:8080",
-                "http://100.50.98.194:8089"
+                "http://100.50.98.194:8089",
+                "https://momen-study.p-e.kr",
+                "http://momen-study.p-e.kr"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
