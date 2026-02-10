@@ -57,7 +57,7 @@ pipeline {
 
                     for (int i = 1; i <= maxRetries; i++) {
                         try {
-                            sh "curl -sf http://localhost:${APP_PORT}/actuator/health"
+                            sh "curl -sf http://host.docker.internal:${APP_PORT}/actuator/health"
                             healthy = true
                             echo "Health check 성공 (${i}/${maxRetries})"
                             break
