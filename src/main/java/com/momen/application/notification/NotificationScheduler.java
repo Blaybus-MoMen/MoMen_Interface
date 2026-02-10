@@ -22,32 +22,38 @@ public class NotificationScheduler {
     private final TodoRepository todoRepository;
     private final NotificationService notificationService;
 
-    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 */3 * * * *", zone = "Asia/Seoul") // TODO: 테스트 후 "0 0 0 * * *"로 복구
     public void notifyIncompleteTodos() {
         try {
-            LocalDate yesterday = LocalDate.now().minusDays(1);
-            List<Todo> incompleteTodos = todoRepository.findIncompleteByDateWithMenteeAndUser(yesterday);
+            LocalDate today = LocalDate.now();
+            List<Todo> incompleteTodos = todoRepository.findAllPastIncompleteWithMenteeAndUser(today);
 
             if (incompleteTodos.isEmpty()) {
-                log.debug("No incomplete todos found for {}", yesterday);
+                log.debug("No past incomplete todos found");
                 return;
             }
 
-            // 멘티(User) 기준으로 그룹핑
-            Map<User, List<Todo>> grouped = incompleteTodos.stream()
-                    .collect(Collectors.groupingBy(todo -> todo.getMentee().getUser()));
+            // 멘티(User) 기준으로 그룹핑 → 각 멘티 내에서 endDate별로 다시 그룹핑
+            Map<User, Map<LocalDate, List<Todo>>> grouped = incompleteTodos.stream()
+                    .collect(Collectors.groupingBy(
+                            todo -> todo.getMentee().getUser(),
+                            Collectors.groupingBy(Todo::getEndDate)
+                    ));
 
-            for (Map.Entry<User, List<Todo>> entry : grouped.entrySet()) {
+            for (Map.Entry<User, Map<LocalDate, List<Todo>>> userEntry : grouped.entrySet()) {
                 try {
-                    User user = entry.getKey();
-                    int count = entry.getValue().size();
-                    String message = String.format("%d월 %d일 %d개의 과제가 완료되지 않았습니다.",
-                            yesterday.getMonthValue(), yesterday.getDayOfMonth(), count);
+                    User user = userEntry.getKey();
+                    for (Map.Entry<LocalDate, List<Todo>> dateEntry : userEntry.getValue().entrySet()) {
+                        LocalDate date = dateEntry.getKey();
+                        int count = dateEntry.getValue().size();
+                        String message = String.format("%d월 %d일 %d개의 과제가 완료되지 않았습니다.",
+                                date.getMonthValue(), date.getDayOfMonth(), count);
 
-                    notificationService.createAndPush(user, message, NotificationType.TODO_INCOMPLETE, null);
-                    log.debug("Sent incomplete todo notification to userId={}, count={}", user.getId(), count);
+                        notificationService.createAndPush(user, message, NotificationType.TODO_INCOMPLETE, null);
+                    }
+                    log.debug("Sent incomplete todo notifications to userId={}", user.getId());
                 } catch (Exception e) {
-                    log.error("Failed to send notification to userId={}: {}", entry.getKey().getId(), e.getMessage());
+                    log.error("Failed to send notification to userId={}: {}", userEntry.getKey().getId(), e.getMessage());
                 }
             }
         } catch (Exception e) {
