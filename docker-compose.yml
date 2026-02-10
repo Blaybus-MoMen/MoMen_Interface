@@ -1,55 +1,40 @@
-version: '3.8'
-
 services:
   app:
-    image: momen:latest # Jenkins가 빌드한 이미지 이름
+    image: momen:latest
     container_name: momen-api
     ports:
-      - "8080:8080"
+      - "8089:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - TZ=Asia/Seoul
-      # Jenkins나 서버 환경 변수에서 주입받거나, .env 파일을 사용
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DB_URL=jdbc:mariadb://db:3306/momen_db
+      - DB_URL=jdbc:mariadb://${DB_HOST}:3306/momen?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-    depends_on:
-      - db
-    networks:
-      - momen-net
-    restart: always
-
-  db:
-    image: mariadb:10.11
-    container_name: momen-db
-    ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=momen_db
-      - MYSQL_USER=${DB_USERNAME}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-      - TZ=Asia/Seoul
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
     volumes:
-      - db_data:/var/lib/mysql
+      - momen-uploads:/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
     networks:
       - momen-net
     restart: always
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   redis:
     image: redis:alpine
     container_name: momen-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - momen-net
     restart: always
 
+volumes:
+  momen-uploads:
+
 networks:
   momen-net:
     driver: bridge
-
-volumes:
-  db_data:

@@ -34,6 +34,7 @@ RUN apk add --no-cache tzdata && \
 
 # 보안: non-root 사용자
 RUN addgroup -g 1000 app && adduser -u 1000 -G app -D app
+RUN mkdir -p /app/uploads /app/logs && chown -R app:app /app
 USER app
 
 COPY --from=builder /app/app.jar app.jar

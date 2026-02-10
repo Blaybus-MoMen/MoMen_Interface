@@ -99,7 +99,7 @@ public class MentoringController {
             @Parameter(description = "조회할 날짜 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "주 시작일-일요일 (yyyy-MM-dd)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate,
             @Parameter(description = "연월 (yyyy-MM)") @RequestParam(required = false) String yearMonth,
-            @Parameter(description = "과목 필터") @RequestParam(required = false) List<String> subjects) {
+            @Parameter(description = "과목 필터 (복수 선택 가능)") @RequestParam(required = false) List<String> subjects) {
         if (date != null) {
             return ResponseEntity.ok(ApiResponse.ok(todoService.getTodosForMenteeByDate(userId, menteeId, date, subjects)));
         }
@@ -119,7 +119,7 @@ public class MentoringController {
     }
 
     @Operation(summary = "Todo별 제출물 조회", description = "특정 할일에 제출된 과제를 조회합니다")
-    @GetMapping("/todos/{todoId}/submission")
+    @GetMapping("/todos/{todoId}/submissions")
     public ResponseEntity<ApiResponse<AssignmentSubmissionResponse>> getSubmission(@PathVariable Long todoId) {
         return ResponseEntity.ok(ApiResponse.ok(assignmentService.getSubmissionByTodo(todoId)));
     }
