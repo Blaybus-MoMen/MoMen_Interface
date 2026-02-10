@@ -1,10 +1,13 @@
 package com.momen.infrastructure.sse;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -13,6 +16,21 @@ public class SseEmitterManager {
 
     private static final long TIMEOUT = 60 * 60 * 1000L; // 1시간
     private final ConcurrentHashMap<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedRate = 30_000) // 30초마다 heartbeat
+    public void sendHeartbeat() {
+        List<Long> deadEmitters = new ArrayList<>();
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("ping"));
+            } catch (IOException e) {
+                deadEmitters.add(userId);
+            }
+        });
+        deadEmitters.forEach(emitters::remove);
+    }
 
     public SseEmitter createEmitter(Long userId) {
         // 기존 연결이 있으면 제거
