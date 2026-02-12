@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -57,6 +59,12 @@ public class Todo extends BaseTimeEntity {
 
     @OneToOne(mappedBy = "todo", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private TodoFeedback todoFeedback;
+
+    @OneToOne(mappedBy = "todo", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private AssignmentSubmission assignmentSubmission;
+
+    @OneToMany(mappedBy = "todo", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<AssignmentMaterial> assignmentMaterials = new ArrayList<>();
 
     public Todo(Mentee mentee, String title, String subject, String goalDescription,
                 LocalDate startDate, LocalDate endDate, Long createdBy, CreatorType creatorType) {
