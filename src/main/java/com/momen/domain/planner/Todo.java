@@ -55,6 +55,9 @@ public class Todo extends BaseTimeEntity {
     @Column(name = "mentor_confirmed")
     private Boolean mentorConfirmed = false; // 멘토 확인 여부
 
+    @OneToOne(mappedBy = "todo", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private TodoFeedback todoFeedback;
+
     public Todo(Mentee mentee, String title, String subject, String goalDescription,
                 LocalDate startDate, LocalDate endDate, Long createdBy, CreatorType creatorType) {
         this.mentee = mentee;
